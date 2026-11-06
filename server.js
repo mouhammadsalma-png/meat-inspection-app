@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// قاعدة بيانات بسيطة وآمنة تعتمد على ملف JSON على السيرفر
 const DB_FILE = './database.json';
 
 function readDB() {
@@ -62,7 +61,7 @@ app.post('/api/inspections', (req, res) => {
     created_at: new Date().toISOString()
   };
 
-  db.inspections.unshift(newInspection); // إضافة في البداية
+  db.inspections.unshift(newInspection);
   writeDB(db);
 
   res.json({ success: true, id: newInspection.id, message: 'تم حفظ الكشف بنجاح في السيرفر' });
