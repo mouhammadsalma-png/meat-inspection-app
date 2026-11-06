@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
@@ -8,47 +8,36 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// إنشاء واتصال بقاعدة البيانات
-const db = new sqlite3.Database('./database.db', (err) => {
-  if (err) console.error('خطأ في قاعدة البيانات:', err.message);
-  else console.log('تم الاتصال بقاعدة البيانات بنجاح.');
-});
+// قاعدة بيانات بسيطة وآمنة تعتمد على ملف JSON على السيرفر
+const DB_FILE = './database.json';
 
-// إعداد الجداول (المستخدمين والكشوفات)
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT,
-    role TEXT
-  )`);
+function readDB() {
+  if (!fs.existsSync(DB_FILE)) {
+    return { 
+      users: [
+        { id: 1, username: 'inspector1', password: '1234', role: 'inspector' },
+        { id: 2, username: 'admin', password: 'admin123', role: 'admin' }
+      ], 
+      inspections: [] 
+    };
+  }
+  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+}
 
-  db.run(`CREATE TABLE IF NOT EXISTS inspections (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    inspector TEXT,
-    shop_name TEXT,
-    inspect_date TEXT,
-    count_m INTEGER,
-    count_g INTEGER,
-    result TEXT,
-    risk TEXT,
-    data_json TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // إضافة حسابات افتراضية للتجربة (يمكن تعديلها لاحقاً)
-  db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('inspector1', '1234', 'inspector')`);
-  db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')`);
-});
+function writeDB(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
 
 // تسجيل الدخول
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
-    res.json({ success: true, role: row.role, username: row.username });
-  });
+  const db = readDB();
+  const user = db.users.find(u => u.username === username && u.password === password);
+  
+  if (!user) {
+    return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+  }
+  res.json({ success: true, role: user.role, username: user.username });
 });
 
 // حفظ كشف جديد
@@ -59,19 +48,30 @@ app.post('/api/inspections', (req, res) => {
     return res.status(400).json({ error: 'اسم الملحمة والمراقب مطلوبة.' });
   }
 
-  const sql = `INSERT INTO inspections (inspector, shop_name, inspect_date, count_m, count_g, result, risk, data_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-  db.run(sql, [inspector, shop_name, inspect_date, count_m, count_g, result, risk, JSON.stringify(data_json)], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, id: this.lastID, message: 'تم حفظ الكشف بنجاح في السيرفر' });
-  });
+  const db = readDB();
+  const newInspection = {
+    id: db.inspections.length + 1,
+    inspector,
+    shop_name,
+    inspect_date,
+    count_m: count_m || 0,
+    count_g: count_g || 0,
+    result: result || 'غير محدد',
+    risk: risk || 'غير محدد',
+    data_json,
+    created_at: new Date().toISOString()
+  };
+
+  db.inspections.unshift(newInspection); // إضافة في البداية
+  writeDB(db);
+
+  res.json({ success: true, id: newInspection.id, message: 'تم حفظ الكشف بنجاح في السيرفر' });
 });
 
-// جلب كافة الكشوفات للمدير (Admin)
+// جلب الكشوفات للمدير
 app.get('/api/inspections', (req, res) => {
-  db.all(`SELECT id, inspector, shop_name, inspect_date, count_m, count_g, result, risk, created_at FROM inspections ORDER BY id DESC`, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+  const db = readDB();
+  res.json(db.inspections);
 });
 
 app.listen(PORT, () => {
