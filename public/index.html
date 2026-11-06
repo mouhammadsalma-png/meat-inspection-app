@@ -89,7 +89,7 @@
       </div>
 
       <div class="grid3">
-        <div class="field"><label>رقم الكشف:</label><input type="text" id="inspectNum"></div>
+        <div class="field"><label>رقم الكشف:</label><input type="text" id="inspectNum" readonly style="font-weight:bold;color:var(--head);"></div>
         <div class="field"><label>التاريخ:</label><input type="date" id="inspectDate"></div>
         <div class="field"><label>الساعة:</label><input type="time" id="inspectTime"></div>
       </div>
@@ -221,7 +221,7 @@
   <table class="admin-table">
     <thead>
       <tr>
-        <th>ID</th>
+        <th>رقم الكشف</th>
         <th>الوزارة / الجهة</th>
         <th>المراقب</th>
         <th>اسم الملحمة</th>
@@ -239,9 +239,23 @@
 <script>
   let loggedUser = null;
 
-  try {
-    document.getElementById('inspectDate').valueAsDate = new Date();
-  } catch(e){}
+  async function fetchNextInspectionNumber() {
+    try {
+      const res = await fetch('/api/inspections');
+      const rows = await res.json();
+      const nextNum = rows.length + 1;
+      document.getElementById('inspectNum').value = 'REC-2026-' + nextNum;
+    } catch (e) {
+      document.getElementById('inspectNum').value = 'REC-2026-1';
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      document.getElementById('inspectDate').valueAsDate = new Date();
+      fetchNextInspectionNumber();
+    } catch(e){}
+  });
 
   function calc() {
     const radios = document.querySelectorAll('#inspectionForm table input[type="radio"]:checked');
@@ -338,6 +352,7 @@
       const resData = await res.json();
       if (res.ok) {
         alert('✅ ' + resData.message);
+        await fetchNextInspectionNumber(); // تحديث رقم الكشف تلقائياً للكشف التالي
       } else {
         alert('❌ خطأ: ' + resData.error);
       }
@@ -354,7 +369,7 @@
       tbody.innerHTML = '';
       rows.forEach(r => {
         tbody.innerHTML += `<tr>
-          <td>${r.id}</td>
+          <td>REC-2026-${r.id}</td>
           <td>${r.ministry || 'الهيئة اللبنانية لسلامة الغذاء'}</td>
           <td>${r.inspector}</td>
           <td>${r.shop_name}</td>
@@ -370,13 +385,14 @@
     }
   }
 
-  function resetForm() {
+  async function resetForm() {
     if (confirm('تفريغ الحقول لملحمة جديدة؟')) {
       document.getElementById('inspectionForm').reset();
       document.getElementById('inspectDate').valueAsDate = new Date();
       document.getElementById('inspectorNameField').value = loggedUser ? loggedUser.username : '';
       document.getElementById('ministry').value = 'الهيئة اللبنانية لسلامة الغذاء';
       calc();
+      await fetchNextInspectionNumber();
     }
   }
 
