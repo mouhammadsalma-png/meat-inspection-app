@@ -47,7 +47,7 @@ app.post('/api/login', (req, res) => {
   res.json({ success: true, role: user.role, username: user.username });
 });
 
-// حفظ كشف جديد
+// حفظ كشف جديد مع ترقيم تلقائي متسلسل
 app.post('/api/inspections', (req, res) => {
   const { inspector, ministry, shop_name, inspect_date, temp_info, count_m, count_g, result, risk, data_json } = req.body;
   
@@ -56,8 +56,10 @@ app.post('/api/inspections', (req, res) => {
   }
 
   const db = readDB();
+  const nextId = db.inspections.length + 1; // الترقيم التلقائي بناءً على عدد الكشوفات
+
   const newInspection = {
-    id: db.inspections.length + 1,
+    id: nextId,
     inspector,
     ministry: ministry || 'الهيئة اللبنانية لسلامة الغذاء',
     shop_name,
@@ -74,7 +76,7 @@ app.post('/api/inspections', (req, res) => {
   db.inspections.unshift(newInspection);
   writeDB(db);
 
-  res.json({ success: true, id: newInspection.id, message: 'تم حفظ الكشف بنجاح في السيرفر' });
+  res.json({ success: true, id: nextId, message: `تم حفظ الكشف بنجاح برقم تسلسلي: REC-2026-${nextId}` });
 });
 
 // جلب الكشوفات للمدير
