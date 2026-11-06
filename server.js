@@ -20,7 +20,6 @@ function readDB() {
     }
   }
   
-  // التأكد من وجود الحسابات الافتراضية دائماً
   if (!db.users || db.users.length === 0) {
     db.users = [
       { id: 1, username: 'inspector1', password: '1234', role: 'inspector' },
@@ -35,7 +34,6 @@ function writeDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// مسار تسجيل الدخول
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const db = readDB();
@@ -47,7 +45,6 @@ app.post('/api/login', (req, res) => {
   res.json({ success: true, role: user.role, username: user.username });
 });
 
-// حفظ كشف جديد مع ترقيم تلقائي متسلسل
 app.post('/api/inspections', (req, res) => {
   const { inspector, ministry, shop_name, inspect_date, temp_info, count_m, count_g, result, risk, data_json } = req.body;
   
@@ -56,7 +53,7 @@ app.post('/api/inspections', (req, res) => {
   }
 
   const db = readDB();
-  const nextId = db.inspections.length + 1; // الترقيم التلقائي بناءً على عدد الكشوفات
+  const nextId = db.inspections.length + 1;
 
   const newInspection = {
     id: nextId,
@@ -79,12 +76,11 @@ app.post('/api/inspections', (req, res) => {
   res.json({ success: true, id: nextId, message: `تم حفظ الكشف بنجاح برقم تسلسلي: REC-2026-${nextId}` });
 });
 
-// جلب الكشوفات للمدير
 app.get('/api/inspections', (req, res) => {
   const db = readDB();
   res.json(db.inspections);
 });
 
 app.listen(PORT, () => {
-  console.log(`السيرفر يعمل الآن على: http://localhost:${PORT}`);
+  console.log(`السيرفر يعمل على: http://localhost:${PORT}`);
 });
