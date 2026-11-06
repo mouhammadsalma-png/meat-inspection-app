@@ -95,7 +95,15 @@
       </div>
 
       <div class="grid2" style="margin-top:6px;">
-        <div class="field"><label>الوزارة / الجهة:</label><input type="text" id="ministry" value="الهيئة اللبنانية لسلامة الغذاء"></div>
+        <div class="field">
+          <label>الوزارة / الجهة:</label>
+          <select id="ministry" style="flex:1;border:none;border-bottom:1px dotted #4b5f57;background:transparent;padding:4px;font-family:inherit;outline:none;">
+            <option value="الهيئة اللبنانية لسلامة الغذاء">الهيئة اللبنانية لسلامة الغذاء</option>
+            <option value="وزارة الاقتصاد والتجارة">وزارة الاقتصاد والتجارة</option>
+            <option value="وزارة الزراعة">وزارة الزراعة</option>
+            <option value="وزارة الصحة العامة">وزارة الصحة العامة</option>
+          </select>
+        </div>
         <div class="field"><label>اسم المراقب:</label><input type="text" id="inspectorNameField" required placeholder="اسم المفتش القائم بالكشف"></div>
         <div class="field"><label>اسم المحل:</label><input type="text" id="shopName" required></div>
         <div class="field"><label>اسم المالك/المسؤول:</label><input type="text" id="ownerName"></div>
@@ -352,7 +360,7 @@
       const resData = await res.json();
       if (res.ok) {
         alert('✅ ' + resData.message);
-        await fetchNextInspectionNumber(); // تحديث رقم الكشف تلقائياً للكشف التالي
+        await fetchNextInspectionNumber();
       } else {
         alert('❌ خطأ: ' + resData.error);
       }
