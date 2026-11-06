@@ -11,23 +11,31 @@ app.use(express.static(path.join(__dirname, 'public')));
 const DB_FILE = './database.json';
 
 function readDB() {
-  if (!fs.existsSync(DB_FILE)) {
-    return { 
-      users: [
-        { id: 1, username: 'inspector1', password: '1234', role: 'inspector' },
-        { id: 2, username: 'admin', password: 'admin123', role: 'admin' }
-      ], 
-      inspections: [] 
-    };
+  let db = { users: [], inspections: [] };
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    } catch (e) {
+      db = { users: [], inspections: [] };
+    }
   }
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  
+  // التأكد من وجود الحسابات الافتراضية دائماً
+  if (!db.users || db.users.length === 0) {
+    db.users = [
+      { id: 1, username: 'inspector1', password: '1234', role: 'inspector' },
+      { id: 2, username: 'admin', password: 'admin123', role: 'admin' }
+    ];
+    writeDB(db);
+  }
+  return db;
 }
 
 function writeDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// تسجيل الدخول
+// مسار تسجيل الدخول
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const db = readDB();
@@ -41,18 +49,20 @@ app.post('/api/login', (req, res) => {
 
 // حفظ كشف جديد
 app.post('/api/inspections', (req, res) => {
-  const { inspector, shop_name, inspect_date, count_m, count_g, result, risk, data_json } = req.body;
+  const { inspector, ministry, shop_name, inspect_date, temp_info, count_m, count_g, result, risk, data_json } = req.body;
   
   if (!shop_name || !inspector) {
-    return res.status(400).json({ error: 'اسم الملحمة والمراقب مطلوبة.' });
+    return res.status(400).json({ error: 'اسم الملحمة واسم المراقب مطلوبة.' });
   }
 
   const db = readDB();
   const newInspection = {
     id: db.inspections.length + 1,
     inspector,
+    ministry: ministry || 'الهيئة اللبنانية لسلامة الغذاء',
     shop_name,
     inspect_date,
+    temp_info: temp_info || 'غير متاح',
     count_m: count_m || 0,
     count_g: count_g || 0,
     result: result || 'غير محدد',
