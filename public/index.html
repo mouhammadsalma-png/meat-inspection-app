@@ -348,7 +348,7 @@
           ministry: dataObj.ministry,
           shop_name: shop,
           inspect_date: document.getElementById('inspectDate').value,
-          temp_info: `براد: ${dataObj.temp_display \vert{}\vert{} 'غير محدد'} \vert{} فريزر: ${dataObj.temp_freezer || 'غير محدد'}`,
+          temp_info: `براد: ${dataObj.temp_display || 'غير محدد'} | فريزر: ${dataObj.temp_freezer || 'غير محدد'}`,
           count_m: document.getElementById('countM').value || 0,
           count_g: document.getElementById('countG').value || 0,
           result: result,
@@ -360,7 +360,7 @@
       const resData = await res.json();
       if (res.ok) {
         alert('✅ ' + resData.message);
-        resetForm(); // تفريغ وتحديث تلقائي للاستمارة بعد الحفظ الناجح
+        resetForm();
       } else {
         alert('❌ خطأ: ' + resData.error);
       }
@@ -382,4 +382,32 @@
           <td>${r.inspector}</td>
           <td>${r.shop_name}</td>
           <td>${r.inspect_date}</td>
-          <td style="font-size:12px;color:#0b3d2e;">${r.temp_info || 'غير مدخل
+          <td style="font-size:12px;color:#0b3d2e;">${r.temp_info || 'غير مدخل'}</td>
+          <td style="color:green;font-weight:bold;">${r.count_m}</td>
+          <td style="color:red;font-weight:bold;">${r.count_g}</td>
+          <td><b>${r.result}</b></td>
+        </tr>`;
+      });
+    } catch (e) {
+      alert('تعذر جلب البيانات.');
+    }
+  }
+
+  async function resetForm() {
+    document.getElementById('inspectionForm').reset();
+    document.getElementById('inspectDate').valueAsDate = new Date();
+    document.getElementById('inspectorNameField').value = loggedUser ? loggedUser.username : '';
+    document.getElementById('ministry').value = 'الهيئة اللبنانية لسلامة الغذاء';
+    document.getElementById('tempDisplay').value = '';
+    document.getElementById('tempFreezer').value = '';
+    document.getElementById('inspectorNotes').value = '';
+    calc();
+    await fetchNextInspectionNumber();
+  }
+
+  function logout() {
+    location.reload();
+  }
+</script>
+</body>
+</html>
