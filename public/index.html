@@ -84,7 +84,7 @@
       <div class="head-block">
         <img src="logo.png" alt="شعار الهيئة" class="logo-img" onerror="this.style.display='none'">
         <div style="font-weight:bold;">الجمهورية اللبنانية — رئاسة مجلس الوزراء</div>
-        <div style="color:#2c4a3f;">الهيئة اللبنانية لسلامة الغذاء</div>
+        <div style="color:#2c4a3f;" id="ministryName">الهيئة اللبنانية لسلامة الغذاء</div>
         <h1>استمارة كشف وتقييم اشتراطات سلامة الغذاء للملاحم</h1>
       </div>
 
@@ -95,6 +95,8 @@
       </div>
 
       <div class="grid2" style="margin-top:6px;">
+        <div class="field"><label>الوزارة / الجهة:</label><input type="text" id="ministry" value="الهيئة اللبنانية لسلامة الغذاء"></div>
+        <div class="field"><label>اسم المراقب:</label><input type="text" id="inspectorNameField" required placeholder="اسم المفتش القائم بالكشف"></div>
         <div class="field"><label>اسم المحل:</label><input type="text" id="shopName" required></div>
         <div class="field"><label>اسم المالك/المسؤول:</label><input type="text" id="ownerName"></div>
         <div class="field"><label>العنوان:</label><input type="text" id="address"></div>
@@ -135,8 +137,12 @@
         </tbody>
       </table>
 
-      <!-- 3. التبريد والحفظ -->
-      <h2 class="sec">3. معدات التبريد وحفظ اللحوم</h2>
+      <!-- 3. التبريد والحفظ (مع قياس درجات الحرارة) -->
+      <h2 class="sec">3. معدات التبريد وحفظ اللحوم وقياس الحرارة</h2>
+      <div style="margin: 10px 0; background: #eef4f1; padding: 10px; border-radius: 6px;" class="grid2">
+        <div class="field"><label>🌡️ حرارة براد العرض:</label><input type="text" id="tempDisplay" placeholder="مثلاً: +2°م"></div>
+        <div class="field"><label>❄️ حرارة الفريزر (التجميد):</label><input type="text" id="tempFreezer" placeholder="مثلاً: -18°م"></div>
+      </div>
       <table class="items">
         <thead><tr><th>#</th><th>بند التحقق</th><th>التقييم</th><th>الملاحظات</th></tr></thead>
         <tbody>
@@ -216,12 +222,13 @@
     <thead>
       <tr>
         <th>ID</th>
+        <th>الوزارة / الجهة</th>
         <th>المراقب</th>
         <th>اسم الملحمة</th>
         <th>التاريخ</th>
-        <th>مطابق (م)</th>
-        <th>غير مطابق (غ)</th>
-        <th>مستوى الخطورة</th>
+        <th>حرارة البراد/الفريزر</th>
+        <th>المطابق</th>
+        <th>غير المطابق</th>
         <th>النتيجة</th>
       </tr>
     </thead>
@@ -261,6 +268,7 @@
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('userBadge').classList.remove('hidden');
         document.getElementById('userNameDisplay').textContent = data.username;
+        document.getElementById('inspectorNameField').value = data.username; // تعبئة تلقائية لاسم المراقب
 
         if (data.role === 'admin') {
           document.getElementById('adminScreen').classList.remove('hidden');
@@ -278,11 +286,18 @@
 
   async function saveInspection() {
     const shop = document.getElementById('shopName').value.trim();
-    if (!shop) { alert('يرجى إدخال اسم الملحمة'); return; }
+    const inspectorName = document.getElementById('inspectorNameField').value.trim();
+    if (!shop || !inspectorName) { alert('يرجى إدخال اسم الملحمة واسم المراقب'); return; }
 
     const formData = new FormData(document.getElementById('inspectionForm'));
     const dataObj = {};
     formData.forEach((val, key) => { dataObj[key] = val; });
+
+    // إضافة حقول الحرارة والوزارة للبيانات المحفوظة
+    dataObj.ministry = document.getElementById('ministry').value;
+    dataObj.inspector_name = inspectorName;
+    dataObj.temp_display = document.getElementById('tempDisplay').value;
+    dataObj.temp_freezer = document.getElementById('tempFreezer').value;
 
     const risk = document.querySelector('input[name="risk"]:checked')?.value || 'غير محدد';
     const result = document.querySelector('input[name="result"]:checked')?.value || 'غير محدد';
@@ -292,9 +307,11 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          inspector: loggedUser.username,
+          inspector: inspectorName,
+          ministry: dataObj.ministry,
           shop_name: shop,
           inspect_date: document.getElementById('inspectDate').value,
+          temp_info: `براد: ${dataObj.temp_display \vert{}\vert{} 'غير محدد'} \vert{} فريزر: ${dataObj.temp_freezer || 'غير محدد'}`,
           count_m: document.getElementById('countM').value || 0,
           count_g: document.getElementById('countG').value || 0,
           result: result,
@@ -323,31 +340,4 @@
       rows.forEach(r => {
         tbody.innerHTML += `<tr>
           <td>${r.id}</td>
-          <td>${r.inspector}</td>
-          <td>${r.shop_name}</td>
-          <td>${r.inspect_date}</td>
-          <td style="color:green;font-weight:bold;">${r.count_m}</td>
-          <td style="color:red;font-weight:bold;">${r.count_g}</td>
-          <td>${r.risk}</td>
-          <td><b>${r.result}</b></td>
-        </tr>`;
-      });
-    } catch (e) {
-      alert('تعذر جلب البيانات.');
-    }
-  }
-
-  function resetForm() {
-    if (confirm('تفريغ الحقول لملحمة جديدة؟')) {
-      document.getElementById('inspectionForm').reset();
-      document.getElementById('inspectDate').valueAsDate = new Date();
-      calc();
-    }
-  }
-
-  function logout() {
-    location.reload();
-  }
-</script>
-</body>
-</html>
+          <td>${r.ministry || 'الهيئة اللبنانية
