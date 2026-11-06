@@ -74,7 +74,7 @@
   <h2 style="color:var(--head);margin-bottom:15px;">تسجيل الدخول</h2>
   <input type="text" id="username" placeholder="اسم المستخدم (inspector1 أو admin)">
   <input type="password" id="password" placeholder="كلمة المرور">
-  <button onclick="login()">دخول للنظام</button>
+  <button type="button" id="loginBtn" onclick="login()">دخول للنظام</button>
 </div>
 
 <!-- 2. شاشة المفتش -->
@@ -238,7 +238,10 @@
 
 <script>
   let loggedUser = null;
-  document.getElementById('inspectDate').valueAsDate = new Date();
+
+  try {
+    document.getElementById('inspectDate').valueAsDate = new Date();
+  } catch(e){}
 
   function calc() {
     const radios = document.querySelectorAll('#inspectionForm table input[type="radio"]:checked');
@@ -255,15 +258,25 @@
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value.trim();
 
+    if(!u || !p) {
+      alert('يرجى كتابة اسم المستخدم وكلمة المرور');
+      return;
+    }
+
+    const btn = document.getElementById('loginBtn');
+    btn.textContent = 'جاري التحقق...';
+    btn.disabled = true;
+
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: u, password: p })
       });
+      
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         loggedUser = data;
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('userBadge').classList.remove('hidden');
@@ -277,10 +290,13 @@
           document.getElementById('inspectorScreen').classList.remove('hidden');
         }
       } else {
-        alert(data.error);
+        alert(data.error || 'خطأ في اسم المستخدم أو كلمة المرور');
       }
     } catch (e) {
-      alert('تعذر الاتصال بالسيرفر.');
+      alert('تعذر الاتصال بالسيرفر. يرجى التأكد من أن السيرفر يعمل وحاول مجدداً.');
+    } finally {
+      btn.textContent = 'دخول للنظام';
+      btn.disabled = false;
     }
   }
 
@@ -356,7 +372,7 @@
 
   function resetForm() {
     if (confirm('تفريغ الحقول لملحمة جديدة؟')) {
-      document.getElementById('inspectionForm'].reset();
+      document.getElementById('inspectionForm').reset();
       document.getElementById('inspectDate').valueAsDate = new Date();
       document.getElementById('inspectorNameField').value = loggedUser ? loggedUser.username : '';
       document.getElementById('ministry').value = 'الهيئة اللبنانية لسلامة الغذاء';
