@@ -73,20 +73,25 @@ app.post('/api/inspections', async (req, res) => {
     const nextId = db.inspections.length + 1;
     let fileUrl = null;
 
-    if (pdf_base64) {
-      const buffer = Buffer.from(pdf_base64.replace(/^data:application\/pdf;base64,/, ''), 'base64');
-      const formData = new FormData();
-      formData.append('file', buffer, { filename: `Inspection_REC-2026-${nextId}_${shop_name}.pdf` });
+    // رفع الـ PDF بطريقة آمنة وسليمة 100%
+    if (pdf_base64 && pdf_base64.startsWith('data:application/pdf;base64,')) {
+      try {
+        const buffer = Buffer.from(pdf_base64.replace(/^data:application\/pdf;base64,/, ''), 'base64');
+        const formData = new FormData();
+        formData.append('file', buffer, { filename: `Inspection_REC-2026-${nextId}_${shop_name}.pdf` });
 
-      const uploadRes = await fetch('https://tmpfiles.org/api/v1/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const uploadData = await uploadRes.json();
-      if (uploadData && uploadData.status === 'success') {
-        let rawUrl = uploadData.data.url;
-        fileUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+        const uploadRes = await fetch('https://tmpfiles.org/api/v1/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData && uploadData.status === 'success' && uploadData.data && uploadData.data.url) {
+          let rawUrl = uploadData.data.url;
+          fileUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+        }
+      } catch (uploadErr) {
+        console.error("فشل رفع ملف الـ PDF، سيتم حفظ البيانات بدون رابط ملف:", uploadErr);
       }
     }
 
@@ -109,7 +114,7 @@ app.post('/api/inspections', async (req, res) => {
     db.inspections.unshift(newInspection);
     await saveCloudDB(db);
 
-    res.json({ success: true, id: nextId, message: `تم حفظ الكشف برقم: REC-2026-${nextId}` });
+    res.json({ success: true, id: nextId, message: `تم حفظ الكشف بنجاح برقم: REC-2026-${nextId}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'حدث خطأ أثناء حفظ البيانات.' });
