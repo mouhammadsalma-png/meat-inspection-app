@@ -1,7 +1,7 @@
 {
   "name": "meat-inspection-app",
   "version": "1.0.0",
-  "description": "الهيئة اللبنانية لسلامة الغذاء",
+  "description": "الهيئة اللبنانية لسلامة الغذاء - نظام كشف الملاحم",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
