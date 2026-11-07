@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الهيئة اللبنانية لسلامة الغذاء - نظام كشف الملاحم</title>
-  <!-- مكتبة التصميم Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- مكتبة توليد الـ PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -25,13 +23,13 @@
       <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-sm font-semibold mb-1">اسم المستخدم</label>
-          <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+          <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="admin أو inspector1">
         </div>
         <div>
           <label class="block text-sm font-semibold mb-1">كلمة المرور</label>
-          <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+          <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="admin123 أو 1234">
         </div>
-        <button type="submit" class="w-full bg-red-700 text-white py-2 rounded-lg font-bold hover:bg-red-800 transition">تسجيل الدخول</button>
+        <button type="submit" id="login-btn" class="w-full bg-red-700 text-white py-2 rounded-lg font-bold hover:bg-red-800 transition">تسجيل الدخول</button>
       </form>
     </div>
   </div>
@@ -81,7 +79,7 @@
             <select id="result" class="w-full px-4 py-2 border rounded-lg">
               <option value="مستوفي الشروط">مستوفي الشروط</option>
               <option value="غير مستوفي الشروط">غير مستوفي الشروط</option>
-              <option value="إنذار وإهلاف">إنذار وإتلاف</option>
+              <option value="إنذار وإتلاف">إنذار وإتلاف</option>
             </select>
           </div>
           <div>
@@ -134,28 +132,39 @@
   <script>
     async function handleLogin(e) {
       e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const btn = document.getElementById('login-btn');
 
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
+      btn.disabled = true;
+      btn.textContent = 'جاري التحقق...';
 
-      if (data.success) {
-        alert('تم تسجيل الدخول بنجاح');
-        document.getElementById('login-section').classList.add('hidden');
-        if (data.role === 'admin') {
-          document.getElementById('admin-section').classList.remove('hidden');
-          loadInspections();
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          document.getElementById('login-section').classList.add('hidden');
+          if (data.role === 'admin') {
+            document.getElementById('admin-section').classList.remove('hidden');
+            loadInspections();
+          } else {
+            document.getElementById('inspector-section').classList.remove('hidden');
+            document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+          }
         } else {
-          document.getElementById('inspector-section').classList.remove('hidden');
-          document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+          alert(data.error || 'اسم المستخدم أو كلمة المرور غير صحيحة');
         }
-      } else {
-        alert(data.error || 'خطأ في تسجيل الدخول');
+      } catch (err) {
+        console.error(err);
+        alert('حدث خطأ في الاتصال بالخادم، تأكد من أن السيرفر يعمل.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'تسجيل الدخول';
       }
     }
 
@@ -175,7 +184,6 @@
       const result = document.getElementById('result').value;
       const risk = document.getElementById('risk').value;
 
-      // توليد ملف الـ PDF برمجياً باستخدام jsPDF
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       
@@ -203,3 +211,54 @@
         inspector,
         shop_name,
         inspect_date,
+        temp_info,
+        count_m,
+        count_g,
+        result,
+        risk,
+        pdf_base64
+      };
+
+      const res = await fetch('/api/inspections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        alert(data.message);
+        document.getElementById('inspection-form').reset();
+      } else {
+        alert(data.error || 'حدث خطأ أثناء حفظ البيانات.');
+      }
+    }
+
+    async function loadInspections() {
+      const res = await fetch('/api/inspections');
+      const inspections = await res.json();
+      const tbody = document.getElementById('inspections-table-body');
+      tbody.innerHTML = '';
+
+      inspections.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3">REC-2026-${item.id}</td>
+          <td class="p-3">${item.ministry}</td>
+          <td class="p-3 font-bold">${item.shop_name}</td>
+          <td class="p-3">${item.inspector}</td>
+          <td class="p-3">${item.inspect_date}</td>
+          <td class="p-3">${item.temp_info}</td>
+          <td class="p-3 text-green-600 font-bold">${item.count_m}</td>
+          <td class="p-3 text-red-600 font-bold">${item.count_g}</td>
+          <td class="p-3">${item.result}</td>
+          <td class="p-3">
+            ${item.pdf_file ? `<a href="${item.pdf_file}" target="_blank" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">تحميل PDF</a>` : 'غير متوفر'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
