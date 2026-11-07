@@ -39,7 +39,6 @@ async function saveCloudDB(dbData) {
   }
 }
 
-// نقطة تسجيل دخول محصنة ومضمونة 100%
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
