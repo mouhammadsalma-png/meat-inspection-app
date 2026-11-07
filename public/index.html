@@ -396,7 +396,6 @@
     let currentFacilityKey = null;
     let currentChecklistState = {};
     window.__inspections = [];
-
     let editingInspection = null;
     let editingFacilityKey = null;
     let editingChecklistState = {};
@@ -417,10 +416,7 @@
     function removeFromLocalCache(record) {
       const cache = getLocalCache();
       const key = `${record.shop_name}|${record.inspect_date}|${record.inspector}`;
-      if (cache[key]) {
-        delete cache[key];
-        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cache));
-      }
+      if (cache[key]) { delete cache[key]; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cache)); }
     }
 
     /* ═══════════ تسجيل الدخول ═══════════ */
@@ -445,14 +441,9 @@
             document.getElementById('facility-selection-section').classList.remove('hidden');
             renderFacilityCards();
           }
-        } else {
-          alert(data.error || 'اسم المستخدم أو كلمة المرور غير صحيحة');
-        }
-      } catch (err) {
-        console.error(err); alert('حدث خطأ في الاتصال بالخادم.');
-      } finally {
-        btn.disabled = false; btn.textContent = 'تسجيل الدخول';
-      }
+        } else { alert(data.error || 'اسم المستخدم أو كلمة المرور غير صحيحة'); }
+      } catch (err) { console.error(err); alert('حدث خطأ في الاتصال بالخادم.'); }
+      finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
     }
     function logout() { location.reload(); }
 
@@ -465,8 +456,7 @@
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'bg-gradient-to-br from-red-50 to-white border-2 border-red-200 p-6 rounded-xl hover:border-red-600 hover:shadow-lg transition text-center';
-        card.innerHTML = `
-          <div class="text-5xl mb-3">${fac.icon}</div>
+        card.innerHTML = `<div class="text-5xl mb-3">${fac.icon}</div>
           <div class="font-bold text-lg text-red-700">${fac.label}</div>
           <div class="text-xs text-gray-500 mt-1">${fac.description}</div>`;
         card.onclick = () => selectFacility(key);
@@ -476,31 +466,18 @@
 
     function selectFacility(key) {
       const facility = FACILITY_CHECKLISTS[key];
-      if (!facility) {
-        console.error("خطأ: نوع المؤسسة غير موجود", key);
-        alert("حدث خطأ في تحميل النموذج. يرجى إعادة تحديث الصفحة.");
-        return;
-      }
-      
+      if (!facility) { alert("حدث خطأ في تحميل النموذج."); return; }
       currentFacilityKey = key;
       currentChecklistState = {};
       facility.categories.forEach((cat, ci) => {
         cat.items.forEach((_, ii) => { currentChecklistState[`c${ci}_i${ii}`] = { status: null, note: '' }; });
       });
-      
       document.getElementById('facility-selection-section').classList.add('hidden');
       document.getElementById('inspector-section').classList.remove('hidden');
       document.getElementById('facility_type').value = facility.label;
       document.getElementById('facility_type_display').textContent = facility.icon + ' ' + facility.label;
       document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
-      
-      renderChecklistSection(
-        document.getElementById('checklist-container'), 
-        facility, 
-        currentChecklistState, 
-        'count_m', 
-        'count_g'
-      );
+      renderChecklistSection(document.getElementById('checklist-container'), facility, currentChecklistState, 'count_m', 'count_g');
       updateCountsFromState(currentChecklistState, 'count_m', 'count_g');
       window.scrollTo(0, 0);
     }
@@ -520,29 +497,23 @@
           <div class="mb-3 border-b pb-2">
             <h4 class="font-bold text-red-700">${ci + 1}. ${cat.name}</h4>
             <p class="text-xs text-gray-400 mt-0.5">المرجع: ${cat.ref}</p>
-          </div>
-          <div class="space-y-1">`;
+          </div><div class="space-y-1">`;
         cat.items.forEach((item, ii) => {
           const key = `c${ci}_i${ii}`;
           const s = state[key] || { status: null, note: '' };
           const passCls = s.status === 'pass' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-700 border-green-300';
           const failCls = s.status === 'fail' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-red-700 border-red-300';
           const naCls   = s.status === 'na'   ? 'bg-gray-500 text-white border-gray-500'  : 'bg-white text-gray-700 border-gray-300';
-          
           const safeNote = (s.note || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-          html += `
-            <div class="flex flex-col md:flex-row md:items-center gap-2 p-2 rounded-lg border-b border-gray-100">
+          html += `<div class="flex flex-col md:flex-row md:items-center gap-2 p-2 rounded-lg border-b border-gray-100">
               <div class="flex-1 text-sm">${item}</div>
               <div class="flex gap-1 shrink-0">
                 <button type="button" data-key="${key}" data-status="pass" class="status-btn px-2 py-1 text-xs rounded border ${passCls}">مطابق</button>
                 <button type="button" data-key="${key}" data-status="fail" class="status-btn px-2 py-1 text-xs rounded border ${failCls}">غير مطابق</button>
                 <button type="button" data-key="${key}" data-status="na" class="status-btn px-2 py-1 text-xs rounded border ${naCls}">لا ينطبق</button>
               </div>
-              ${s.status === 'fail'
-                ? `<input type="text" data-key="${key}" value="${safeNote}" placeholder="سبب عدم المطابقة..."
-                    class="note-input w-full md:w-56 px-2 py-1 text-xs border border-red-300 rounded bg-red-50">`
-                : ''}
+              ${s.status === 'fail' ? `<input type="text" data-key="${key}" value="${safeNote}" placeholder="سبب عدم المطابقة..."
+                    class="note-input w-full md:w-56 px-2 py-1 text-xs border border-red-300 rounded bg-red-50">` : ''}
             </div>`;
         });
         html += `</div></div>`;
@@ -553,17 +524,14 @@
     function renderChecklistSection(container, fac, state, countM_Id, countG_Id) {
       if (!container || !fac) return;
       container.innerHTML = buildChecklistHTML(fac, state);
-      
       container.querySelectorAll('.status-btn').forEach(btn => {
         btn.onclick = () => {
-          const key = btn.dataset.key;
-          const status = btn.dataset.status;
+          const key = btn.dataset.key, status = btn.dataset.status;
           state[key].status = state[key].status === status ? null : status;
           renderChecklistSection(container, fac, state, countM_Id, countG_Id);
           updateCountsFromState(state, countM_Id, countG_Id);
         };
       });
-      
       container.querySelectorAll('.note-input').forEach(inp => {
         inp.oninput = e => { state[e.target.dataset.key].note = e.target.value; };
       });
@@ -575,15 +543,11 @@
         if (s.status === 'pass') m++;
         else if (s.status === 'fail') g++;
       });
-      
       const em = document.getElementById(idM), eg = document.getElementById(idG);
       if (em) em.value = m;
       if (eg) eg.value = g;
-      
-      // في حال كانت العدادات في نافذة التعديل
       if (idM === 'edit_count_m') {
-        const dm = document.getElementById('edit_count_m');
-        const dg = document.getElementById('edit_count_g');
+        const dm = document.getElementById('edit_count_m'), dg = document.getElementById('edit_count_g');
         if (dm) dm.textContent = m;
         if (dg) dg.textContent = g;
       }
@@ -595,7 +559,6 @@
       if (!currentFacilityKey) { alert('الرجاء اختيار نوع المؤسسة أولاً.'); return; }
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.textContent = 'جاري حفظ البيانات...';
-      
       try {
         const checklist = [];
         FACILITY_CHECKLISTS[currentFacilityKey].categories.forEach((cat, ci) => {
@@ -604,7 +567,6 @@
             checklist.push({ category: cat.name, reference: cat.ref, item: itemText, status: s.status || 'pending', note: s.note || '' });
           });
         });
-        
         const payload = {
           facility_key: currentFacilityKey,
           facility_type: document.getElementById('facility_type').value,
@@ -618,27 +580,20 @@
           risk: document.getElementById('risk').value,
           checklist
         };
-        
         const res = await fetch('/api/inspections', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        
         if (res.ok && data.success) {
           saveToLocalCache({ ...payload, server_id: data.id || null });
           alert(data.message || 'تم حفظ الكشف بنجاح');
           document.getElementById('inspection-form').reset();
           document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
           changeFacility();
-        } else {
-          alert(data.error || 'حدث خطأ أثناء حفظ البيانات.');
-        }
-      } catch (err) {
-        console.error(err); alert('حدث خطأ غير متوقع.');
-      } finally {
-        btn.disabled = false; btn.textContent = 'حفظ الكشف وإرساله للسحابة المركزية';
-      }
+        } else { alert(data.error || 'حدث خطأ أثناء حفظ البيانات.'); }
+      } catch (err) { console.error(err); alert('حدث خطأ غير متوقع.'); }
+      finally { btn.disabled = false; btn.textContent = 'حفظ الكشف وإرساله للسحابة المركزية'; }
     }
 
     /* ═══════════ عرض كشوفات المدير ═══════════ */
@@ -652,12 +607,9 @@
         const cached = cache[key];
         if (cached && Array.isArray(cached.checklist) && cached.checklist.length > 0) {
           return {
-            ...item,
-            checklist: cached.checklist,
-            count_m: cached.count_m ?? item.count_m,
-            count_g: cached.count_g ?? item.count_g,
-            result: cached.result ?? item.result,
-            risk: cached.risk ?? item.risk,
+            ...item, checklist: cached.checklist,
+            count_m: cached.count_m ?? item.count_m, count_g: cached.count_g ?? item.count_g,
+            result: cached.result ?? item.result, risk: cached.risk ?? item.risk,
             temp_info: cached.temp_info ?? item.temp_info,
             facility_key: cached.facility_key || item.facility_key
           };
@@ -685,10 +637,8 @@
           <td class="p-3">${item.result}${warn}</td>
           <td class="p-3">
             <div class="flex flex-col gap-1">
-              <button onclick="downloadPDF(window.__inspections[${idx}])"
-                class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">طباعة / PDF</button>
-              <button onclick="openEditInspection(${idx})"
-                class="bg-amber-500 text-white px-3 py-1 rounded text-xs hover:bg-amber-600 transition">تعديل / استكمال</button>
+              <button onclick="downloadPDF(window.__inspections[${idx}])" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">طباعة / PDF</button>
+              <button onclick="openEditInspection(${idx})" class="bg-amber-500 text-white px-3 py-1 rounded text-xs hover:bg-amber-600 transition">تعديل / استكمال</button>
             </div>
           </td>`;
         tbody.appendChild(tr);
@@ -705,25 +655,18 @@
     function openEditInspection(idx) {
       const item = window.__inspections[idx];
       const facKey = findFacilityKey(item);
-      if (!facKey) {
-        alert('لا يمكن تحديد نوع المؤسسة لهذا الكشف. تأكد من وجود حقل facility_key في البيانات المحفوظة.');
-        return;
-      }
+      if (!facKey) { alert('لا يمكن تحديد نوع المؤسسة لهذا الكشف.'); return; }
       editingInspection = item;
       editingFacilityKey = facKey;
       editingChecklistState = {};
 
       const fac = FACILITY_CHECKLISTS[facKey];
       const existing = Array.isArray(item.checklist) ? item.checklist : [];
-
       fac.categories.forEach((cat, ci) => {
         cat.items.forEach((itemText, ii) => {
           const key = `c${ci}_i${ii}`;
           const found = existing.find(e => e.category === cat.name && e.item === itemText);
-          editingChecklistState[key] = {
-            status: found ? found.status : null,
-            note: found ? (found.note || '') : ''
-          };
+          editingChecklistState[key] = { status: found ? found.status : null, note: found ? (found.note || '') : '' };
         });
       });
 
@@ -746,11 +689,10 @@
     function closeEditModal() {
       document.getElementById('edit-modal').classList.add('hidden');
       document.body.style.overflow = '';
-      editingInspection = null;
-      editingFacilityKey = null;
-      editingChecklistState = {};
+      editingInspection = null; editingFacilityKey = null; editingChecklistState = {};
     }
 
+    /* ═══════════ حفظ التعديلات ═══════════ */
     async function saveEditedInspection() {
       if (!editingInspection || !editingFacilityKey) return;
       const btn = document.getElementById('edit-save-btn');
@@ -760,10 +702,7 @@
       FACILITY_CHECKLISTS[editingFacilityKey].categories.forEach((cat, ci) => {
         cat.items.forEach((itemText, ii) => {
           const s = editingChecklistState[`c${ci}_i${ii}`];
-          checklist.push({
-            category: cat.name, reference: cat.ref, item: itemText,
-            status: s.status || 'pending', note: s.note || ''
-          });
+          checklist.push({ category: cat.name, reference: cat.ref, item: itemText, status: s.status || 'pending', note: s.note || '' });
         });
       });
 
@@ -783,29 +722,62 @@
         checklist
       };
 
+      const id = editingInspection.id ?? editingInspection._id ?? editingInspection.inspection_id;
       let apiSuccess = false;
-      try {
-        const res = await fetch(`/api/inspections/${editingInspection.id}`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          const data = await res.json();
-          apiSuccess = data.success === true;
+      let lastError = '';
+
+      if (!id) {
+        lastError = 'لا يوجد معرّف (id) لهذا الكشف في بيانات الـ API.';
+        console.warn(lastError, editingInspection);
+      } else {
+        const attempts = [
+          { method: 'PUT',    url: `/api/inspections/${id}` },
+          { method: 'POST',   url: `/api/inspections/${id}` },
+          { method: 'PUT',    url: `/api/inspections/update/${id}` },
+          { method: 'POST',   url: `/api/inspections/update/${id}` },
+          { method: 'PATCH',  url: `/api/inspections/${id}` }
+        ];
+
+        for (const att of attempts) {
+          try {
+            console.log(`🔁 محاولة: ${att.method} ${att.url}`);
+            const res = await fetch(att.url, {
+              method: att.method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+              let body = {};
+              try { body = await res.json(); } catch {}
+              if (body.success === true || body.id || body.updated || res.status === 200 || res.status === 204) {
+                apiSuccess = true;
+                console.log(`✅ نجح ${att.method} ${att.url}`);
+                break;
+              }
+              lastError = `HTTP ${res.status} - استجابة غير متوقعة`;
+            } else {
+              lastError = `HTTP ${res.status} ${res.statusText} على ${att.method} ${att.url}`;
+              const text = await res.text().catch(() => '');
+              if (text) lastError += ` — ${text.slice(0, 200)}`;
+            }
+          } catch (err) {
+            lastError = `${att.method} ${att.url} — ${err.message}`;
+          }
         }
-      } catch (err) { console.error(err); }
+      }
 
       const oldKey = `${editingInspection.shop_name}|${editingInspection.inspect_date}|${editingInspection.inspector}`;
       const newKey = `${payload.shop_name}|${payload.inspect_date}|${payload.inspector}`;
       if (oldKey !== newKey) removeFromLocalCache(editingInspection);
-      
-      saveToLocalCache({ ...payload, server_id: editingInspection.id });
+      saveToLocalCache({ ...payload, server_id: id || null });
       Object.assign(editingInspection, payload);
 
       if (apiSuccess) {
         alert('✅ تم حفظ التعديلات على السيرفر وفي المتصفح.');
       } else {
-        alert('⚠️ تعذّر التحديث على السيرفر، لكن تم حفظ التعديلات في هذا المتصفح بنجاح.');
+        alert('⚠️ تعذّر حفظ التعديلات على السيرفر.\n\nالتفاصيل:\n' + (lastError || 'سبب غير معروف') + '\n\nتم حفظ التعديلات في هذا المتصفح فقط مؤقتاً.');
+        console.error('❌ فشل كل محاولات الحفظ. آخر خطأ:', lastError);
       }
 
       btn.disabled = false; btn.textContent = 'حفظ التعديلات';
@@ -813,7 +785,7 @@
       loadInspections();
     }
 
-    /* ═══════════ توليد PDF ═══════════ */
+    /* ═══════════ توليد التقرير PDF ═══════════ */
     async function downloadPDF(item) {
       if ((!Array.isArray(item.checklist) || item.checklist.length === 0) && item.id) {
         try {
@@ -822,7 +794,7 @@
             const full = await res.json();
             if (Array.isArray(full.checklist) && full.checklist.length > 0) item.checklist = full.checklist;
           }
-        } catch (e) { /* تجاهل */ }
+        } catch (e) {}
       }
       if (!Array.isArray(item.checklist) || item.checklist.length === 0) {
         const cache = getLocalCache();
@@ -830,20 +802,53 @@
         if (cache[key] && Array.isArray(cache[key].checklist)) item.checklist = cache[key].checklist;
       }
 
+      const checklist = Array.isArray(item.checklist) ? item.checklist : [];
+      const total = checklist.length;
+      const passCount = checklist.filter(x => x.status === 'pass').length;
+      const failCount = checklist.filter(x => x.status === 'fail').length;
+      const naCount   = checklist.filter(x => x.status === 'na').length;
+      const pendingCount = checklist.filter(x => !x.status || x.status === 'pending').length;
+      const applicable = passCount + failCount;
+      const compliance = applicable > 0 ? Math.round((passCount / applicable) * 100) : 0;
+
+      function resultColor(r) {
+        if (!r) return '#6b7280';
+        if (r.includes('إغلاق')) return '#dc2626';
+        if (r.includes('إنذار')) return '#ea580c';
+        if (r.includes('غير مستوفي')) return '#dc2626';
+        if (r.includes('مستوفي')) return '#16a34a';
+        return '#6b7280';
+      }
+      function riskColor(r) {
+        if (!r) return '#6b7280';
+        if (r.includes('عالي')) return '#dc2626';
+        if (r.includes('متوسط')) return '#f59e0b';
+        if (r.includes('منخفض')) return '#16a34a';
+        return '#6b7280';
+      }
+      function complianceColor(p) {
+        if (p >= 90) return '#16a34a';
+        if (p >= 70) return '#f59e0b';
+        return '#dc2626';
+      }
+
+      const finalResult = item.result || '— غير محدد';
+      const finalRisk = item.risk || '— غير محدد';
+
       const printWindow = window.open('', '_blank');
       if (!printWindow) { alert('الرجاء السماح بالنوافذ المنبثقة لطباعة التقرير.'); return; }
 
       let checklistHtml = '';
-      const hasChecklist = Array.isArray(item.checklist) && item.checklist.length > 0;
+      const hasChecklist = checklist.length > 0;
       if (hasChecklist) {
         const groups = {};
-        item.checklist.forEach(it => {
+        checklist.forEach(it => {
           if (!groups[it.category]) groups[it.category] = { reference: it.reference, items: [] };
           groups[it.category].items.push(it);
         });
         Object.entries(groups).forEach(([cat, g]) => {
           checklistHtml += `
-            <div style="margin-top:16px;">
+            <div style="margin-top:16px; page-break-inside: avoid;">
               <div style="background:#b91c1c;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold;font-size:14px;">
                 ${cat} <span style="font-weight:normal;font-size:11px;opacity:0.85;">— ${g.reference}</span>
               </div>
@@ -869,30 +874,105 @@
         });
       }
 
+      const summaryHtml = `
+        <div style="margin-top:24px;padding:16px;border:2px solid #b91c1c;border-radius:10px;background:#fafafa;page-break-inside:avoid;">
+          <h2 style="color:#b91c1c;font-size:18px;margin:0 0 14px 0;padding-bottom:8px;border-bottom:2px solid #b91c1c;">
+            📋 ملخص التقييم النهائي
+          </h2>
+
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">إجمالي البنود</div>
+              <div style="font-size:22px;font-weight:bold;color:#374151;">${total}</div>
+            </div>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:#166534;margin-bottom:4px;">مطابق</div>
+              <div style="font-size:22px;font-weight:bold;color:#16a34a;">${passCount}</div>
+            </div>
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:#991b1b;margin-bottom:4px;">غير مطابق</div>
+              <div style="font-size:22px;font-weight:bold;color:#dc2626;">${failCount}</div>
+            </div>
+            <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;padding:10px;text-align:center;">
+              <div style="font-size:11px;color:#4b5563;margin-bottom:4px;">لا ينطبق</div>
+              <div style="font-size:22px;font-weight:bold;color:#6b7280;">${naCount}</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:13px;font-weight:bold;color:#374151;">نسبة المطابقة</span>
+              <span style="font-size:20px;font-weight:bold;color:${complianceColor(compliance)};">${compliance}%</span>
+            </div>
+            <div style="width:100%;height:10px;background:#e5e7eb;border-radius:5px;overflow:hidden;">
+              <div style="height:100%;width:${compliance}%;background:${complianceColor(compliance)};transition:width 0.3s;"></div>
+            </div>
+            ${pendingCount > 0 ? `<div style="margin-top:6px;font-size:11px;color:#b45309;">⚠ ${pendingCount} بند غير مُقيَّم بعد</div>` : ''}
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:#fff;border:2px solid ${resultColor(finalResult)};border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">النتيجة النهائية للكشف</div>
+              <div style="font-size:16px;font-weight:bold;color:${resultColor(finalResult)};">${finalResult}</div>
+            </div>
+            <div style="background:#fff;border:2px solid ${riskColor(finalRisk)};border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">مستوى الخطورة (HACCP)</div>
+              <div style="font-size:16px;font-weight:bold;color:${riskColor(finalRisk)};">${finalRisk}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const signaturesHtml = `
+        <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px;page-break-inside:avoid;">
+          <div style="text-align:center;">
+            <div style="font-weight:bold;color:#374151;margin-bottom:30px;">توقيع المراقب المعتمد</div>
+            <div style="border-top:2px solid #374151;padding-top:8px;font-size:13px;">${item.inspector || ''}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:bold;color:#374151;margin-bottom:30px;">توقيع مدير الهيئة</div>
+            <div style="border-top:2px solid #374151;padding-top:8px;font-size:13px;">—</div>
+          </div>
+        </div>
+        <div style="margin-top:30px;text-align:center;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;">
+          هذا التقرير صادر إلكترونياً عن نظام الكشف الرقابي للهيئة اللبنانية لسلامة الغذاء — لا يحتاج إلى ختم ما لم يُذكر خلاف ذلك.
+        </div>
+      `;
+
       const missingMsg = !hasChecklist ? `
         <div style="margin-top:20px;padding:14px;border:2px dashed #dc2626;background:#fef2f2;color:#991b1b;border-radius:8px;font-size:13px;">
-          ⚠️ <strong>قائمة التحقق التفصيلية غير متوفرة في التقرير.</strong><br>
-          السبب: هذا الكشف لم يُحفظ معه حقل <code>checklist</code>، ولا توجد نسخة محلية في هذا المتصفح.<br><br>
-          <strong>الحل:</strong> استخدم زر «تعديل / استكمال» من لوحة المدير لتعبئة البنود وإعادة الحفظ.
+          ⚠️ <strong>قائمة التحقق التفصيلية غير متوفرة.</strong><br>
+          استخدم زر «تعديل / استكمال» من لوحة المدير لتعبئة البنود وإعادة الحفظ.
         </div>` : '';
 
       const htmlContent = `
-        <!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
-        <title>التقرير الرسمي - REC-2026-${item.id}</title>
-        <style>
-          body { font-family: 'Cairo', Tahoma, sans-serif; padding: 30px; color: #333; direction: rtl; }
-          .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 12px; margin-bottom: 20px; }
-          .header h1 { color: #b91c1c; margin: 0; font-size: 22px; }
-          .header p { color: #666; margin: 5px 0 0 0; font-size: 12px; }
-          .details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; margin-bottom: 20px; }
-          .details div { background: #f9fafb; padding: 8px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
-          .details strong { color: #111; }
-          @media print { body { padding: 10px; } .no-print { display: none; } }
-        </style></head><body>
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>التقرير الرسمي - REC-2026-${item.id}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 30px; color: #333; direction: rtl; margin: 0; }
+            .header { text-align: center; border-bottom: 3px solid #b91c1c; padding-bottom: 12px; margin-bottom: 20px; }
+            .header h1 { color: #b91c1c; margin: 0; font-size: 22px; }
+            .header p { color: #666; margin: 5px 0 0 0; font-size: 12px; }
+            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; margin-bottom: 20px; }
+            .details div { background: #f9fafb; padding: 8px 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
+            .details strong { color: #111; }
+            @media print {
+              body { padding: 10px; }
+              .no-print { display: none !important; }
+              .details, .header { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
           <div class="header">
             <h1>الهيئة اللبنانية لسلامة الغذاء</h1>
             <p>تقرير الكشف الرقابي الرسمي — طبقاً للقوانين اللبنانية والمعايير الدولية (ISO 22000 & Codex Alimentarius & HACCP)</p>
           </div>
+
           <div class="details">
             <div><strong>رقم الكشف:</strong> REC-2026-${item.id}</div>
             <div><strong>نوع المؤسسة:</strong> ${item.facility_type || '-'}</div>
@@ -900,18 +980,24 @@
             <div><strong>المراقب:</strong> ${item.inspector}</div>
             <div><strong>التاريخ:</strong> ${item.inspect_date}</div>
             <div><strong>حرارة التبريد/التجميد:</strong> ${item.temp_info || 'غير متاح'}</div>
-            <div><strong>بنود المطابقة:</strong> ${item.count_m}</div>
-            <div><strong>بنود عدم المطابقة:</strong> ${item.count_g}</div>
-            <div><strong>النتيجة النهائية:</strong> ${item.result}</div>
-            <div><strong>مستوى الخطورة:</strong> ${item.risk}</div>
           </div>
-          <h2 style="color:#b91c1c;font-size:16px;margin-bottom:8px;">قائمة التحقق التفصيلية</h2>
+
+          ${summaryHtml}
+
+          <h2 style="color:#b91c1c;font-size:16px;margin-top:24px;margin-bottom:8px;">قائمة التحقق التفصيلية</h2>
           ${checklistHtml || missingMsg}
+
+          ${signaturesHtml}
+
           <div class="no-print" style="text-align:center;margin-top:30px;">
-            <button onclick="window.print()" style="background:#b91c1c;color:white;border:none;padding:12px 25px;font-size:16px;border-radius:8px;cursor:pointer;font-weight:bold;">طباعة / حفظ كـ PDF</button>
+            <button onclick="window.print()" style="background:#b91c1c;color:white;border:none;padding:12px 25px;font-size:16px;border-radius:8px;cursor:pointer;font-weight:bold;">
+              🖨️ طباعة / حفظ كـ PDF
+            </button>
           </div>
+
           <script>window.onload = function(){ setTimeout(() => window.print(), 600); };<\/script>
-        </body></html>`;
+        </body>
+        </html>`;
 
       printWindow.document.write(htmlContent);
       printWindow.document.close();
