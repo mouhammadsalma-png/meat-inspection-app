@@ -1,11 +1,14 @@
 {
   "name": "meat-inspection-system",
   "version": "1.0.0",
+  "description": "الهيئة اللبنانية لسلامة الغذاء - نظام كشف الملاحم",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.7.0"
   }
 }
