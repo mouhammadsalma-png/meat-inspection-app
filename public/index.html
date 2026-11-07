@@ -92,7 +92,7 @@
           </div>
         </div>
 
-        <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 transition">حفظ الكشف وتوليد الـ PDF وإرساله للسحابة</button>
+        <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700 transition">حفظ الكشف وإرساله للسحابة</button>
       </form>
     </div>
   </div>
@@ -176,7 +176,7 @@
       e.preventDefault();
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
-      btn.textContent = 'جاري توليد ملف الـ PDF وحفظ البيانات...';
+      btn.textContent = 'جاري حفظ البيانات في السحابة...';
 
       try {
         const shop_name = document.getElementById('shop_name').value;
@@ -188,29 +188,6 @@
         const result = document.getElementById('result').value;
         const risk = document.getElementById('risk').value;
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.text("Lebanese Food Safety Authority", 105, 20, { align: "center" });
-        doc.setFontSize(12);
-        doc.text("Meat Inspection & Compliance Report", 105, 30, { align: "center" });
-        
-        doc.line(20, 35, 190, 35);
-        
-        doc.setFontSize(11);
-        doc.text(`Shop Name: ${shop_name}`, 20, 50);
-        doc.text(`Inspector: ${inspector}`, 20, 60);
-        doc.text(`Inspection Date: ${inspect_date}`, 20, 70);
-        doc.text(`Temperature: ${temp_info}`, 20, 80);
-        doc.text(`Compliant Items (M): ${count_m}`, 20, 90);
-        doc.text(`Non-Compliant Items (G): ${count_g}`, 20, 100);
-        doc.text(`Final Result: ${result}`, 20, 110);
-        doc.text(`Risk Level: ${risk}`, 20, 120);
-
-        const pdf_base64 = doc.output('datauristring');
-
         const payload = {
           inspector,
           shop_name,
@@ -219,8 +196,7 @@
           count_m,
           count_g,
           result,
-          risk,
-          pdf_base64
+          risk
         };
 
         const res = await fetch('/api/inspections', {
@@ -242,7 +218,7 @@
         alert('حدث خطأ غير متوقع أثناء المعالجة.');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'حفظ الكشف وتوليد الـ PDF وإرساله للسحابة';
+        btn.textContent = 'حفظ الكشف وإرساله للسحابة';
       }
     }
 
@@ -265,11 +241,37 @@
           <td class="p-3 text-red-600 font-bold">${item.count_g}</td>
           <td class="p-3">${item.result}</td>
           <td class="p-3">
-            ${item.pdf_file ? `<a href="${item.pdf_file}" target="_blank" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">تحميل PDF</a>` : '<span class="text-gray-400">غير متوفر</span>'}
+            <button onclick='downloadPDF(${JSON.stringify(item)})' class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">تحميل PDF</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function downloadPDF(item) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Lebanese Food Safety Authority", 105, 20, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("Meat Inspection & Compliance Report", 105, 30, { align: "center" });
+      
+      doc.line(20, 35, 190, 35);
+      
+      doc.setFontSize(11);
+      doc.text(`Inspection ID: REC-2026-${item.id}`, 20, 45);
+      doc.text(`Shop Name: ${item.shop_name}`, 20, 55);
+      doc.text(`Inspector: ${item.inspector}`, 20, 65);
+      doc.text(`Inspection Date: ${item.inspect_date}`, 20, 75);
+      doc.text(`Temperature: ${item.temp_info}`, 20, 85);
+      doc.text(`Compliant Items (M): ${item.count_m}`, 20, 95);
+      doc.text(`Non-Compliant Items (G): ${item.count_g}`, 20, 105);
+      doc.text(`Final Result: ${item.result}`, 20, 115);
+      doc.text(`Risk Level: ${item.risk}`, 20, 125);
+
+      doc.save(`Inspection_REC-2026-${item.id}_${item.shop_name}.pdf`);
     }
   </script>
 </body>
