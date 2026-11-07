@@ -9,11 +9,11 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// بيانات الاتصال بسحابة JSONbin (يمكنك وضعها هنا أو في متغيرات البيئة في Render)
-const JSONBIN_BIN_ID = process.env.JSONBIN_BIN_ID || 'ضع_معرف_الـ_Bin_هنا';
+// بيانات سحابة JSONbin (تأكد من وضع معرف الـ Bin والمفتاح السري هنا أو عبر متغيرات البيئة في Render)
+const JSONBIN_BIN_ID = process.env.JSONBIN_BIN_ID || '6aef796dffd5d16053afa539';
 const JSONBIN_SECRET_KEY = process.env.JSONBIN_SECRET_KEY || 'ضع_مفتاح_الـ_Master_Key_هنا';
 
-// دوال جلب وحفظ البيانات من السحابة الخارجية
+// دوال جلب وحفظ البيانات من السحابة الخارجية الدائمة
 async function getCloudDB() {
   try {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
@@ -46,6 +46,16 @@ async function saveCloudDB(dbData) {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   const db = await getCloudDB();
+  
+  // إعداد بيانات افتراضية أولية إذا كانت السحابة فارغة
+  if (!db.users || db.users.length === 0) {
+    db.users = [
+      { id: 1, username: 'inspector1', password: '1234', role: 'inspector' },
+      { id: 2, username: 'admin', password: 'admin123', role: 'admin' }
+    ];
+    await saveCloudDB(db);
+  }
+
   const user = db.users.find(u => u.username === username && u.password === password);
   
   if (!user) {
@@ -64,10 +74,12 @@ app.post('/api/inspections', async (req, res) => {
     }
 
     const db = await getCloudDB();
+    if (!db.inspections) db.inspections = [];
+    
     const nextId = db.inspections.length + 1;
     let fileUrl = null;
 
-    // رفع ملف الـ PDF برمجياً والحصول على رابط مباشر
+    // رفع ملف الـ PDF برمجياً والحصول على رابط مباشر ودائم
     if (pdf_base64) {
       const buffer = Buffer.from(pdf_base64.replace(/^data:application\/pdf;base64,/, ''), 'base64');
       const formData = new FormData();
@@ -111,10 +123,10 @@ app.post('/api/inspections', async (req, res) => {
   }
 });
 
-// مسار جلب السجلات للمدير
+// مسار جلب السجلات للمدير من السحابة
 app.get('/api/inspections', async (req, res) => {
   const db = await getCloudDB();
-  res.json(db.inspections);
+  res.json(db.inspections || []);
 });
 
 app.listen(PORT, () => {
