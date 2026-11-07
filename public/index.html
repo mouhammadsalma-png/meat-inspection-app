@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>الهيئة اللبنانية لسلامة الغذاء - نظام الكشف الشامل</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الهيئة اللبنانية لسلامة الغذاء - نظام الكشف الرقابي الشامل</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
@@ -13,83 +14,144 @@
 
   <!-- شاشة تسجيل الدخول -->
   <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-      <h1 class="text-2xl font-bold text-red-700 text-center mb-6">الهيئة اللبنانية لسلامة الغذاء</h1>
-      <form onsubmit="handleLogin(event)" class="space-y-4">
-        <div><label class="block text-sm font-semibold mb-1">اسم المستخدم</label><input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg"></div>
-        <div><label class="block text-sm font-semibold mb-1">كلمة المرور</label><input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg"></div>
-        <button type="submit" id="login-btn" class="w-full bg-red-700 text-white py-2 rounded-lg font-bold">تسجيل الدخول</button>
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-red-700">الهيئة اللبنانية لسلامة الغذاء</h1>
+        <p class="text-sm text-gray-500 mt-1">نظام كشف وتقييم الاشتراطات الصحية (ISO 22000 & Codex)</p>
+      </div>
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">اسم المستخدم</label>
+          <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="admin أو inspector1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">كلمة المرور</label>
+          <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="admin123 أو 1234">
+        </div>
+        <button type="submit" id="login-btn" class="w-full bg-red-700 text-white py-2 rounded-lg font-bold hover:bg-red-800 transition">تسجيل الدخول</button>
       </form>
     </div>
   </div>
 
-  <!-- لوحة المراقب / استمارة الكشف حسب نوع المؤسسة والمعايير الدولية -->
+  <!-- لوحة المراقب / استمارة الكشف الشاملة -->
   <div id="inspector-section" class="hidden min-h-screen p-4 max-w-4xl mx-auto">
-    <div class="bg-white p-6 rounded-2xl shadow-xl">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
       <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <h2 class="text-xl font-bold text-red-700">استمارة الكشف وتقييم الاشتراطات الصحية (ISO 22000 & Codex)</h2>
-        <button onclick="location.reload()" class="bg-gray-200 px-3 py-1 rounded text-sm">تسجيل الخروج</button>
+        <div>
+          <h2 class="text-xl font-bold text-red-700">استمارة الكشف الرقابي الميداني</h2>
+          <p class="text-xs text-gray-500">متوافقة مع متطلبات السلامة الغذائية الوطنية والدولية</p>
+        </div>
+        <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">تسجيل الخروج</button>
       </div>
-      <form id="inspection-form" onsubmit="submitInspection(event)" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold mb-1">نوع المؤسسة</label>
-            <select id="facility_type" class="w-full p-2 border rounded">
-              <option value="ملحمة (Butcher Shop)">ملحمة</option>
-              <option value="مطعم (Restaurant)">مطعم</option>
-              <option value="سوبرماركت (Supermarket)">سوبرماركت</option>
-              <option value="مسلخ (Slaughterhouse)">مسلخ</option>
-            </select>
-          </div>
-          <div><label class="block text-sm font-semibold mb-1">اسم المؤسسة / المحل</label><input type="text" id="shop_name" required class="w-full p-2 border rounded"></div>
-          <div><label class="block text-sm font-semibold mb-1">اسم المراقب</label><input type="text" id="inspector_name" required class="w-full p-2 border rounded"></div>
-          <div><label class="block text-sm font-semibold mb-1">تاريخ الكشف</label><input type="date" id="inspect_date" required class="w-full p-2 border rounded"></div>
-          <div><label class="block text-sm font-semibold mb-1">درجة حرارة التبريد / التجميد</label><input type="text" id="temp_info" placeholder="مثال: 4°م" class="w-full p-2 border rounded"></div>
-          <div><label class="block text-sm font-semibold mb-1">بنود المطابقة (م)</label><input type="number" id="count_m" value="0" class="w-full p-2 border rounded"></div>
-          <div><label class="block text-sm font-semibold mb-1">بنود عدم المطابقة (غير م)</label><input type="number" id="count_g" value="0" class="w-full p-2 border rounded"></div>
-          <div>
-            <label class="block text-sm font-semibold mb-1">النتيجة النهائية</label>
-            <select id="result" class="w-full p-2 border rounded">
-              <option value="مستوفي الشروط الصحية">مستوفي الشروط الصحية</option>
-              <option value="غير مستوفي الشروط">غير مستوفي الشروط</option>
-              <option value="إنذار وإتلاف فوري">إنذار وإتلاف فوري</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold mb-1">مستوى الخطورة (حسب HACCP)</label>
-            <select id="risk" class="w-full p-2 border rounded">
-              <option value="منخفض (Low Risk)">منخفض</option>
-              <option value="متوسط (Medium Risk)">متوسط</option>
-              <option value="عالي / خطر داهم (Critical Hazard)">عالي / خطر داهم</option>
-            </select>
+
+      <form id="inspection-form" onsubmit="submitInspection(event)" class="space-y-6">
+        
+        <!-- معلومات المنشأة الأساسية -->
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">1. بيانات المنشأة والمراقب</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">نوع المؤسسة</label>
+              <select id="facility_type" class="w-full px-4 py-2 border rounded-lg bg-white">
+                <option value="ملحمة (Butcher Shop)">ملحمة</option>
+                <option value="مطعم (Restaurant)">مطعم</option>
+                <option value="سوبرماركت (Supermarket)">سوبرماركت</option>
+                <option value="مسلخ (Slaughterhouse)">مسلخ</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">اسم المؤسسة / المحل</label>
+              <input type="text" id="shop_name" required class="w-full px-4 py-2 border rounded-lg bg-white" placeholder="أدخل اسم المحل أو المؤسسة">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">اسم المراقب المعتمد</label>
+              <input type="text" id="inspector_name" required class="w-full px-4 py-2 border rounded-lg bg-white" placeholder="اسم المراقب الثلاثي">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">تاريخ الكشف</label>
+              <input type="date" id="inspect_date" required class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
           </div>
         </div>
-        <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white py-3 rounded font-bold mt-4">حفظ الكشف وإرساله للسحابة</button>
+
+        <!-- القياسات والاشتراطات الفنية -->
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">2. القياسات والاشتراطات الفنية والحرارية</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">حرارة التبريد / التجميد</label>
+              <input type="text" id="temp_info" placeholder="مثال: 4°م (براد) / -18°م (فريزر)" class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">بنود المطابقة (م)</label>
+              <input type="number" id="count_m" value="0" min="0" class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">بنود عدم المطابقة (غير م)</label>
+              <input type="number" id="count_g" value="0" min="0" class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
+          </div>
+        </div>
+
+        <!-- التقييم والقرار النهائي -->
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">3. التقييم النهائي وإجراءات السلامة (HACCP)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">النتيجة النهائية للكشف</label>
+              <select id="result" class="w-full px-4 py-2 border rounded-lg bg-white">
+                <option value="مستوفي الشروط الصحية">مستوفي الشروط الصحية</option>
+                <option value="غير مستوفي الشروط">غير مستوفي الشروط</option>
+                <option value="إنذار وإتلاف فوري">إنذار وإتلاف فوري</option>
+                <option value="إغلاق إداري مؤقت">إغلاق إداري مؤقت</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">مستوى الخطورة (Risk Assessment)</label>
+              <select id="risk" class="w-full px-4 py-2 border rounded-lg bg-white">
+                <option value="منخفض (Low Risk)">منخفض</option>
+                <option value="متوسط (Medium Risk)">متوسط</option>
+                <option value="عالي / خطر داهم (Critical Hazard)">عالي / خطر داهم</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-700 transition shadow-lg">حفظ الكشف وإرساله للسحابة المركزية</button>
       </form>
     </div>
   </div>
 
   <!-- لوحة تحكم المدير -->
   <div id="admin-section" class="hidden min-h-screen p-4 max-w-6xl mx-auto">
-    <div class="bg-white p-6 rounded-2xl shadow-xl">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
       <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <h2 class="text-xl font-bold text-red-700">لوحة تحكم المدير - السجلات الرقابية</h2>
-        <button onclick="location.reload()" class="bg-gray-200 px-3 py-1 rounded text-sm">تسجيل الخروج</button>
+        <div>
+          <h2 class="text-xl font-bold text-red-700">لوحة تحكم المدير - السجلات والتقارير الرقابية</h2>
+          <p class="text-xs text-gray-500">إدارة ومراجعة كشوفات المؤسسات الغذائية</p>
+        </div>
+        <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">تسجيل الخروج</button>
       </div>
+
       <div class="overflow-x-auto">
-        <table class="w-full text-right border-collapse text-sm">
+        <table class="w-full text-right border-collapse">
           <thead>
-            <tr class="bg-red-700 text-white">
+            <tr class="bg-red-700 text-white text-sm">
               <th class="p-3">رقم الكشف</th>
               <th class="p-3">نوع المؤسسة</th>
-              <th class="p-3">الاسم</th>
+              <th class="p-3">اسم المؤسسة</th>
               <th class="p-3">المراقب</th>
               <th class="p-3">التاريخ</th>
+              <th class="p-3">الحرارة</th>
+              <th class="p-3">المطابق</th>
+              <th class="p-3">غير المطابق</th>
               <th class="p-3">النتيجة</th>
-              <th class="p-3">الإجراء</th>
+              <th class="p-3">التقرير الرسمي</th>
             </tr>
           </thead>
-          <tbody id="inspections-table-body" class="divide-y"></tbody>
+          <tbody id="inspections-table-body" class="text-sm divide-y divide-gray-200">
+            <!-- يتم تعبئتها ديناميكياً -->
+          </tbody>
         </table>
       </div>
     </div>
@@ -98,48 +160,86 @@
   <script>
     async function handleLogin(e) {
       e.preventDefault();
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        document.getElementById('login-section').classList.add('hidden');
-        if (data.role === 'admin') {
-          document.getElementById('admin-section').classList.remove('hidden');
-          loadInspections();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const btn = document.getElementById('login-btn');
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التحقق...';
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          document.getElementById('login-section').classList.add('hidden');
+          if (data.role === 'admin') {
+            document.getElementById('admin-section').classList.remove('hidden');
+            loadInspections();
+          } else {
+            document.getElementById('inspector-section').classList.remove('hidden');
+            document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+          }
         } else {
-          document.getElementById('inspector-section').classList.remove('hidden');
-          document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+          alert(data.error || 'اسم المستخدم أو كلمة المرور غير صحيحة');
         }
-      } else { alert(data.error || 'خطأ في بيانات الدخول'); }
+      } catch (err) {
+        console.error(err);
+        alert('حدث خطأ في الاتصال بالخادم.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'تسجيل الدخول';
+      }
+    }
+
+    function logout() {
+      location.reload();
     }
 
     async function submitInspection(e) {
       e.preventDefault();
-      const payload = {
-        facility_type: document.getElementById('facility_type').value,
-        shop_name: document.getElementById('shop_name').value,
-        inspector: document.getElementById('inspector_name').value,
-        inspect_date: document.getElementById('inspect_date').value,
-        temp_info: document.getElementById('temp_info').value,
-        count_m: document.getElementById('count_m').value,
-        count_g: document.getElementById('count_g').value,
-        result: document.getElementById('result').value,
-        risk: document.getElementById('risk').value
-      };
-      const res = await fetch('/api/inspections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        alert(data.message);
-        document.getElementById('inspection-form').reset();
-        document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
-      } else { alert(data.error || 'خطأ في الحفظ'); }
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'جاري حفظ البيانات في السحابة...';
+
+      try {
+        const payload = {
+          facility_type: document.getElementById('facility_type').value,
+          shop_name: document.getElementById('shop_name').value,
+          inspector: document.getElementById('inspector_name').value,
+          inspect_date: document.getElementById('inspect_date').value,
+          temp_info: document.getElementById('temp_info').value,
+          count_m: document.getElementById('count_m').value,
+          count_g: document.getElementById('count_g').value,
+          result: document.getElementById('result').value,
+          risk: document.getElementById('risk').value
+        };
+
+        const res = await fetch('/api/inspections', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          alert(data.message);
+          document.getElementById('inspection-form').reset();
+          document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+        } else {
+          alert(data.error || 'حدث خطأ أثناء حفظ البيانات.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('حدث خطأ غير متوقع أثناء المعالجة.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'حفظ الكشف وإرساله للسحابة المركزية';
+      }
     }
 
     async function loadInspections() {
@@ -147,6 +247,7 @@
       const inspections = await res.json();
       const tbody = document.getElementById('inspections-table-body');
       tbody.innerHTML = '';
+
       inspections.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -155,8 +256,13 @@
           <td class="p-3 font-bold">${item.shop_name}</td>
           <td class="p-3">${item.inspector}</td>
           <td class="p-3">${item.inspect_date}</td>
+          <td class="p-3">${item.temp_info || 'غير متاح'}</td>
+          <td class="p-3 text-green-600 font-bold">${item.count_m}</td>
+          <td class="p-3 text-red-600 font-bold">${item.count_g}</td>
           <td class="p-3">${item.result}</td>
-          <td class="p-3"><button onclick='downloadPDF(${JSON.stringify(item)})' class="bg-blue-600 text-white px-3 py-1 rounded text-xs">طباعة / حفظ PDF</button></td>
+          <td class="p-3">
+            <button onclick='downloadPDF(${JSON.stringify(item)})' class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">طباعة / حفظ PDF</button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -164,43 +270,60 @@
 
     function downloadPDF(item) {
       const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
+      
+      const htmlContent = `
         <!DOCTYPE html>
         <html lang="ar" dir="rtl">
         <head>
-          <meta charset="UTF-8"><title>تقرير كشف - REC-2026-${item.id}</title>
+          <meta charset="UTF-8">
+          <title>التقرير الرسمي - REC-2026-${item.id}</title>
           <style>
-            body { font-family: Tahoma, sans-serif; padding: 30px; direction: rtl; color: #111; }
-            .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 10px; margin-bottom: 20px; }
-            .header h2 { color: #b91c1c; margin: 0; }
-            .box { background: #f9fafb; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
-            p { margin: 8px 0; font-size: 14px; }
+            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 40px; color: #333; direction: rtl; text-align: right; }
+            .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 15px; margin-bottom: 25px; }
+            .header h1 { color: #b91c1c; margin: 0; font-size: 22px; }
+            .header p { color: #666; margin: 5px 0 0 0; font-size: 13px; }
+            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 15px; margin-bottom: 30px; }
+            .details div { background: #f9fafb; padding: 10px; border-radius: 6px; border: 1px solid #e5e7eb; }
+            .details strong { color: #111; }
+            @media print {
+              body { padding: 10px; }
+              button { display: none; }
+            }
           </style>
         </head>
         <body>
           <div class="header">
-            <h2>الهيئة اللبنانية لسلامة الغذاء</h2>
-            <p>وفقاً للقوانين اللبنانية، معايير ISO 22000 و Codex Alimentarius</p>
+            <h1>الهيئة اللبنانية لسلامة الغذاء</h1>
+            <p>تقرير الكشف الرقابي الرسمي - طبقاً للقوانين اللبنانية والمعايير الدولية (ISO 22000 & Codex Alimentarius)</p>
           </div>
-          <div class="box">
-            <p><strong>رقم الكشف الرسمي:</strong> REC-2026-${item.id}</p>
-            <p><strong>نوع المؤسسة:</strong> ${item.facility_type || 'ملحمة'}</p>
-            <p><strong>اسم المؤسسة:</strong> ${item.shop_name}</p>
-            <p><strong>اسم المراقب المعتمد:</strong> ${item.inspector}</p>
-            <p><strong>تاريخ الكشف:</strong> ${item.inspect_date}</p>
-            <p><strong>درجة الحرارة المسجلة:</strong> ${item.temp_info}</p>
-            <p><strong>بنود المطابقة (م):</strong> ${item.count_m}</p>
-            <p><strong>بنود عدم المطابقة (غير م):</strong> ${item.count_g}</p>
-            <p><strong>النتيجة النهائية:</strong> ${item.result}</p>
-            <p><strong>مستوى الخطورة (HACCP):</strong> ${item.risk}</p>
+
+          <div class="details">
+            <div><strong>رقم الكشف الرسمي:</strong> REC-2026-${item.id}</div>
+            <div><strong>نوع المؤسسة:</strong> ${item.facility_type || 'ملحمة'}</div>
+            <div><strong>اسم المؤسسة / المحل:</strong> ${item.shop_name}</div>
+            <div><strong>اسم المراقب المعتمد:</strong> ${item.inspector}</div>
+            <div><strong>تاريخ الكشف الميداني:</strong> ${item.inspect_date}</div>
+            <div><strong>حرارة التبريد / التجميد:</strong> ${item.temp_info || 'غير متاح'}</div>
+            <div><strong>بنود المطابقة (م):</strong> ${item.count_m}</div>
+            <div><strong>بنود عدم المطابقة (غير م):</strong> ${item.count_g}</div>
+            <div><strong>النتيجة النهائية:</strong> ${item.result}</div>
+            <div><strong>مستوى الخطورة (HACCP):</strong> ${item.risk}</div>
           </div>
-          <div style="text-align:center; margin-top:25px;">
-            <button onclick="window.print()" style="background: #b91c1c; color: white; border: none; padding: 10px 20px; font-size: 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">طباعة التقرير الرسمي / حفظ كـ ملف PDF</button>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <button onclick="window.print()" style="background: #b91c1c; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">طباعة التقرير الرسمي / حفظ كـ ملف PDF</button>
           </div>
-          <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+
+          <script>
+            window.onload = function() {
+              setTimeout(() => { window.print(); }, 500);
+            };
+          </script>
         </body>
         </html>
-      `);
+      `;
+
+      printWindow.document.write(htmlContent);
       printWindow.document.close();
     }
   </script>
