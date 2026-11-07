@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الهيئة اللبنانية لسلامة الغذاء - نظام كشف الملاحم</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
     body { font-family: 'Cairo', sans-serif; }
@@ -118,7 +117,7 @@
               <th class="p-3">المطابق</th>
               <th class="p-3">غير المطابق</th>
               <th class="p-3">النتيجة</th>
-              <th class="p-3">ملف PDF</th>
+              <th class="p-3">ملف التقرير</th>
             </tr>
           </thead>
           <tbody id="inspections-table-body" class="text-sm divide-y divide-gray-200">
@@ -241,7 +240,7 @@
           <td class="p-3 text-red-600 font-bold">${item.count_g}</td>
           <td class="p-3">${item.result}</td>
           <td class="p-3">
-            <button onclick='downloadPDF(${JSON.stringify(item)})' class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">تحميل PDF</button>
+            <button onclick='downloadPDF(${JSON.stringify(item)})' class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">طباعة / حفظ PDF</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -249,39 +248,62 @@
     }
 
     function downloadPDF(item) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const printWindow = window.open('', '_blank');
       
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text("Lebanese Food Safety Authority", 105, 20, { align: "center" });
-      doc.setFontSize(11);
-      doc.text("Meat Inspection & Compliance Report", 105, 28, { align: "center" });
-      
-      doc.line(20, 33, 190, 33);
-      
-      doc.setFontSize(10);
-      let y = 45;
-      
-      const details = [
-        `Inspection ID (رقم الكشف): REC-2026-${item.id}`,
-        `Ministry / Entity (الجهة): ${item.ministry}`,
-        `Shop Name (اسم الملحمة): ${item.shop_name}`,
-        `Inspector (المراقب): ${item.inspector}`,
-        `Inspection Date (التاريخ): ${item.inspect_date}`,
-        `Temperature (درجة الحرارة): ${item.temp_info}`,
-        `Compliant Items (بنود المطابقة M): ${item.count_m}`,
-        `Non-Compliant Items (بنود عدم المطابقة G): ${item.count_g}`,
-        `Final Result (النتيجة النهائية): ${item.result}`,
-        `Risk Level (مستوى الخطورة): ${item.risk}`
-      ];
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>تقرير كشف الملحمة - REC-2026-${item.id}</title>
+          <style>
+            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 40px; color: #333; direction: rtl; text-align: right; }
+            .header { text-align: center; border-bottom: 2px solid #b91c1c; padding-bottom: 15px; margin-bottom: 25px; }
+            .header h1 { color: #b91c1c; margin: 0; font-size: 24px; }
+            .header p { color: #666; margin: 5px 0 0 0; font-size: 16px; }
+            .details { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 16px; margin-bottom: 30px; }
+            .details div { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+            .details strong { color: #111; }
+            @media print {
+              body { padding: 10px; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>الهيئة اللبنانية لسلامة الغذاء</h1>
+            <p>استمارة كشف وتقييم اشتراطات الملاحم</p>
+          </div>
 
-      details.forEach(text => {
-        doc.text(text, 20, y);
-        y += 10;
-      });
+          <div class="details">
+            <div><strong>رقم الكشف:</strong> REC-2026-${item.id}</div>
+            <div><strong>الجهة / الوزارة:</strong> ${item.ministry}</div>
+            <div><strong>اسم الملحمة:</strong> ${item.shop_name}</div>
+            <div><strong>اسم المراقب:</strong> ${item.inspector}</div>
+            <div><strong>تاريخ الكشف:</strong> ${item.inspect_date}</div>
+            <div><strong>درجة الحرارة:</strong> ${item.temp_info}</div>
+            <div><strong>بنود المطابقة (م):</strong> ${item.count_m}</div>
+            <div><strong>بنود عدم المطابقة (غير م):</strong> ${item.count_g}</div>
+            <div><strong>النتيجة النهائية:</strong> ${item.result}</div>
+            <div><strong>مستوى الخطورة:</strong> ${item.risk}</div>
+          </div>
 
-      doc.save(`Inspection_REC-2026-${item.id}.pdf`);
+          <div style="text-align: center; margin-top: 30px;">
+            <button onclick="window.print()" style="background: #b91c1c; color: white; border: none; padding: 12px 25px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">طباعة التقرير / حفظ كـ PDF</button>
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(() => { window.print(); }, 500);
+            };
+          </script>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
     }
   </script>
 </body>
