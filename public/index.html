@@ -15,7 +15,9 @@
   <!-- تسجيل الدخول -->
   <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
-      <div class="text-center mb-6">
+      <div class="text-center mb-6 flex flex-col items-center">
+        <!-- الشعار -->
+        <img src="logo.png" alt="شعار الهيئة" class="w-32 h-32 object-contain mb-4" onerror="this.style.display='none'">
         <h1 class="text-2xl font-bold text-red-700">الهيئة اللبنانية لسلامة الغذاء</h1>
         <p class="text-sm text-gray-500 mt-1">نظام كشف وتقييم الاشتراطات الصحية (ISO 22000 & Codex)</p>
       </div>
@@ -37,9 +39,12 @@
   <div id="facility-selection-section" class="hidden min-h-screen p-4 max-w-6xl mx-auto">
     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
       <div class="flex justify-between items-start mb-6 border-b pb-4">
-        <div>
-          <h2 class="text-2xl font-bold text-red-700">اختر نوع المؤسسة الغذائية</h2>
-          <p class="text-sm text-gray-500 mt-1">سيتم تحميل نموذج الكشف المفصل المناسب حسب المعايير الدولية (Codex, HACCP, ISO 22000, GFSI)</p>
+        <div class="flex items-center gap-4">
+          <img src="logo.png" alt="شعار الهيئة" class="w-16 h-16 object-contain shrink-0" onerror="this.style.display='none'">
+          <div>
+            <h2 class="text-2xl font-bold text-red-700">اختر نوع المؤسسة الغذائية</h2>
+            <p class="text-sm text-gray-500 mt-1">سيتم تحميل نموذج الكشف المفصل المناسب حسب المعايير الدولية (Codex, HACCP, ISO 22000, GFSI)</p>
+          </div>
         </div>
         <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">تسجيل الخروج</button>
       </div>
@@ -51,9 +56,12 @@
   <div id="inspector-section" class="hidden min-h-screen p-4 max-w-4xl mx-auto">
     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
       <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <div>
-          <h2 class="text-xl font-bold text-red-700">استمارة الكشف الرقابي الميداني</h2>
-          <p class="text-xs text-gray-500">متوافقة مع متطلبات السلامة الغذائية الوطنية والدولية</p>
+        <div class="flex items-center gap-3">
+          <img src="logo.png" alt="شعار الهيئة" class="w-12 h-12 object-contain shrink-0" onerror="this.style.display='none'">
+          <div>
+            <h2 class="text-xl font-bold text-red-700">استمارة الكشف الرقابي الميداني</h2>
+            <p class="text-xs text-gray-500">متوافقة مع متطلبات السلامة الغذائية الوطنية والدولية</p>
+          </div>
         </div>
         <div class="flex gap-2">
           <button onclick="changeFacility()" class="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg hover:bg-yellow-200">تغيير نوع المؤسسة</button>
@@ -140,9 +148,12 @@
   <div id="admin-section" class="hidden min-h-screen p-4 max-w-7xl mx-auto">
     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
       <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <div>
-          <h2 class="text-xl font-bold text-red-700">لوحة تحكم المدير - السجلات والتقارير الرقابية</h2>
-          <p class="text-xs text-gray-500">إدارة ومراجعة كشوفات المؤسسات الغذائية</p>
+        <div class="flex items-center gap-3">
+          <img src="logo.png" alt="شعار الهيئة" class="w-12 h-12 object-contain shrink-0" onerror="this.style.display='none'">
+          <div>
+            <h2 class="text-xl font-bold text-red-700">لوحة تحكم المدير - السجلات والتقارير الرقابية</h2>
+            <p class="text-xs text-gray-500">إدارة ومراجعة كشوفات المؤسسات الغذائية</p>
+          </div>
         </div>
         <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">تسجيل الخروج</button>
       </div>
@@ -954,7 +965,8 @@
           <style>
             * { box-sizing: border-box; }
             body { font-family: 'Cairo', Tahoma, sans-serif; padding: 30px; color: #333; direction: rtl; margin: 0; }
-            .header { text-align: center; border-bottom: 3px solid #b91c1c; padding-bottom: 12px; margin-bottom: 20px; }
+            .header { text-align: center; border-bottom: 3px solid #b91c1c; padding-bottom: 12px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+            .header img { height: 90px; object-fit: contain; margin-bottom: 10px; }
             .header h1 { color: #b91c1c; margin: 0; font-size: 22px; }
             .header p { color: #666; margin: 5px 0 0 0; font-size: 12px; }
             .details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; margin-bottom: 20px; }
@@ -969,6 +981,8 @@
         </head>
         <body>
           <div class="header">
+            <!-- الشعار في تقرير الطباعة -->
+            <img src="logo.png" alt="شعار الهيئة" onerror="this.style.display='none'">
             <h1>الهيئة اللبنانية لسلامة الغذاء</h1>
             <p>تقرير الكشف الرقابي الرسمي — طبقاً للقوانين اللبنانية والمعايير الدولية (ISO 22000 & Codex Alimentarius & HACCP)</p>
           </div>
