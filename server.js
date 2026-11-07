@@ -44,7 +44,6 @@ async function saveCloudDB(dbData) {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
-  // التحقق المباشر من الحسابات الافتراضية لضمان عدم فشل الدخول أبداً
   if (username === 'admin' && password === 'admin123') {
     return res.json({ success: true, role: 'admin', username: 'admin' });
   }
@@ -52,7 +51,6 @@ app.post('/api/login', async (req, res) => {
     return res.json({ success: true, role: 'inspector', username: 'inspector1' });
   }
 
-  // التحقق من قاعدة البيانات السحابية للحسابات الإضافية إن وجدت
   const db = await getCloudDB();
   const user = db.users && db.users.find(u => u.username === username && u.password === password);
   if (!user) {
