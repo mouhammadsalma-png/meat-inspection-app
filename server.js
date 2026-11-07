@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const fetch = require('node-fetch');
-const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,7 +60,7 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/inspections', async (req, res) => {
   try {
-    const { inspector, ministry, shop_name, inspect_date, temp_info, count_m, count_g, result, risk, pdf_base64 } = req.body;
+    const { inspector, ministry, shop_name, inspect_date, temp_info, count_m, count_g, result, risk } = req.body;
     
     if (!shop_name || !inspector) {
       return res.status(400).json({ error: 'اسم الملحمة واسم المراقب مطلوبان.' });
@@ -71,28 +70,6 @@ app.post('/api/inspections', async (req, res) => {
     if (!db.inspections) db.inspections = [];
     
     const nextId = db.inspections.length + 1;
-    let fileUrl = null;
-
-    if (pdf_base64 && pdf_base64.startsWith('data:application/pdf;base64,')) {
-      try {
-        const buffer = Buffer.from(pdf_base64.replace(/^data:application\/pdf;base64,/, ''), 'base64');
-        const formData = new FormData();
-        formData.append('file', buffer, { filename: `Inspection_REC-2026-${nextId}_${shop_name}.pdf` });
-
-        const uploadRes = await fetch('https://tmpfiles.org/api/v1/upload', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const uploadData = await uploadRes.json();
-        if (uploadData && uploadData.status === 'success' && uploadData.data && uploadData.data.url) {
-          let rawUrl = uploadData.data.url;
-          fileUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-        }
-      } catch (uploadErr) {
-        console.error("فشل رفع ملف الـ PDF:", uploadErr);
-      }
-    }
 
     const newInspection = {
       id: nextId,
@@ -105,7 +82,6 @@ app.post('/api/inspections', async (req, res) => {
       count_g: count_g || 0,
       result: result || 'غير محدد',
       risk: risk || 'غير محدد',
-      pdf_file: fileUrl,
       created_at: new Date().toISOString()
     };
 
