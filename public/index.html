@@ -253,25 +253,35 @@
       const doc = new jsPDF();
       
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.text("Lebanese Food Safety Authority", 105, 20, { align: "center" });
-      doc.setFontSize(12);
-      doc.text("Meat Inspection & Compliance Report", 105, 30, { align: "center" });
-      
-      doc.line(20, 35, 190, 35);
-      
       doc.setFontSize(11);
-      doc.text(`Inspection ID: REC-2026-${item.id}`, 20, 45);
-      doc.text(`Shop Name: ${item.shop_name}`, 20, 55);
-      doc.text(`Inspector: ${item.inspector}`, 20, 65);
-      doc.text(`Inspection Date: ${item.inspect_date}`, 20, 75);
-      doc.text(`Temperature: ${item.temp_info}`, 20, 85);
-      doc.text(`Compliant Items (M): ${item.count_m}`, 20, 95);
-      doc.text(`Non-Compliant Items (G): ${item.count_g}`, 20, 105);
-      doc.text(`Final Result: ${item.result}`, 20, 115);
-      doc.text(`Risk Level: ${item.risk}`, 20, 125);
+      doc.text("Meat Inspection & Compliance Report", 105, 28, { align: "center" });
+      
+      doc.line(20, 33, 190, 33);
+      
+      doc.setFontSize(10);
+      let y = 45;
+      
+      const details = [
+        `Inspection ID (رقم الكشف): REC-2026-${item.id}`,
+        `Ministry / Entity (الجهة): ${item.ministry}`,
+        `Shop Name (اسم الملحمة): ${item.shop_name}`,
+        `Inspector (المراقب): ${item.inspector}`,
+        `Inspection Date (التاريخ): ${item.inspect_date}`,
+        `Temperature (درجة الحرارة): ${item.temp_info}`,
+        `Compliant Items (بنود المطابقة M): ${item.count_m}`,
+        `Non-Compliant Items (بنود عدم المطابقة G): ${item.count_g}`,
+        `Final Result (النتيجة النهائية): ${item.result}`,
+        `Risk Level (مستوى الخطورة): ${item.risk}`
+      ];
 
-      doc.save(`Inspection_REC-2026-${item.id}_${item.shop_name}.pdf`);
+      details.forEach(text => {
+        doc.text(text, 20, y);
+        y += 10;
+      });
+
+      doc.save(`Inspection_REC-2026-${item.id}.pdf`);
     }
   </script>
 </body>
