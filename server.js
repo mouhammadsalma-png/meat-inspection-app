@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// بيانات سحابة JSONbin (تأكد من وضع معرف الـ Bin والمفتاح السري هنا أو عبر متغيرات البيئة في Render)
+// بيانات سحابة JSONbin الدائمة
 const JSONBIN_BIN_ID = process.env.JSONBIN_BIN_ID || '6aef796dffd5d16053afa539';
 const JSONBIN_SECRET_KEY = process.env.JSONBIN_SECRET_KEY || 'ضع_مفتاح_الـ_Master_Key_هنا';
 
