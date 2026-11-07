@@ -39,6 +39,7 @@ async function saveCloudDB(dbData) {
   }
 }
 
+// 1. تسجيل الدخول
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
@@ -57,30 +58,19 @@ app.post('/api/login', async (req, res) => {
   res.json({ success: true, role: user.role, username: user.username });
 });
 
+// 2. إضافة كشف جديد
 app.post('/api/inspections', async (req, res) => {
   try {
-    const { inspector, ministry, shop_name, inspect_date, temp_info, count_m, count_g, result, risk } = req.body;
-    
-    if (!shop_name || !inspector) {
-      return res.status(400).json({ error: 'اسم الملحمة واسم المراقب مطلوبان.' });
-    }
-
     const db = await getCloudDB();
     if (!db.inspections) db.inspections = [];
     
-    const nextId = db.inspections.length + 1;
+    const maxId = db.inspections.reduce((max, i) => Math.max(max, i.id || 0), 0);
+    const nextId = maxId + 1;
 
     const newInspection = {
+      ...req.body, // التقاط كل الحقول بما فيها checklist
       id: nextId,
-      inspector,
-      ministry: ministry || 'الهيئة اللبنانية لسلامة الغذاء',
-      shop_name,
-      inspect_date,
-      temp_info: temp_info || 'غير متاح',
-      count_m: count_m || 0,
-      count_g: count_g || 0,
-      result: result || 'غير محدد',
-      risk: risk || 'غير محدد',
+      ministry: req.body.ministry || 'الهيئة اللبنانية لسلامة الغذاء',
       created_at: new Date().toISOString()
     };
 
@@ -94,9 +84,46 @@ app.post('/api/inspections', async (req, res) => {
   }
 });
 
+// 3. جلب كل الكشوفات
 app.get('/api/inspections', async (req, res) => {
   const db = await getCloudDB();
   res.json(db.inspections || []);
+});
+
+// 4. جلب كشف واحد
+app.get('/api/inspections/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const db = await getCloudDB();
+  const inspection = (db.inspections || []).find(i => i.id === id);
+  if (!inspection) return res.status(404).json({ error: 'الكشف غير موجود' });
+  res.json(inspection);
+});
+
+// 5. تعديل كشف (هذا المسار يحل مشكلة 404)
+app.put('/api/inspections/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const db = await getCloudDB();
+    if (!db.inspections) db.inspections = [];
+
+    const index = db.inspections.findIndex(i => i.id === id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'الكشف غير موجود' });
+    }
+
+    db.inspections[index] = {
+      ...db.inspections[index],
+      ...req.body,
+      id: id, 
+      updated_at: new Date().toISOString()
+    };
+
+    await saveCloudDB(db);
+    res.json({ success: true, message: 'تم تحديث الكشف بنجاح' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: 'حدث خطأ أثناء التحديث.' });
+  }
 });
 
 app.listen(PORT, () => {
