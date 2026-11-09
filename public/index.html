@@ -85,11 +85,12 @@
         </div>
 
         <div class="bg-gray-50 p-4 rounded-xl">
-          <h3 class="font-bold text-red-700 border-b pb-2 mb-4">قائمة التحقق</h3>
+          <h3 class="font-bold text-red-700 border-b pb-2 mb-4">3. قائمة التحقق التفصيلية</h3>
           <div id="checklist-container" class="space-y-4"></div>
         </div>
 
         <div class="bg-gray-50 p-4 rounded-xl space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">4. التقييم النهائي</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold mb-1">النتيجة النهائية</label>
@@ -213,16 +214,152 @@
     }
     setInterval(syncOutbox, 30000);
 
-    // --- 3. Checklists Data ---
+    // --- 3. FULL Checklists Data (Restored) ---
     const FACILITY_CHECKLISTS = {
-      restaurant: { label: 'مطعم', icon: '🍽️', categories: [ { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية سارية', 'نظافة الأيدي والزي', 'مغاسل أيدي'] } ] },
-      butcher: { label: 'ملحمة', icon: '🥩', categories: [ { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية', 'ارتداء الزي'] } ] },
-      supermarket: { label: 'سوبرماركت', icon: '🛒', categories: [ { name: 'التخزين', ref: 'Codex §5', items: ['فصل الأغذية', 'رفوف نظيفة'] } ] },
-      slaughterhouse: { label: 'مسلخ', icon: '🐄', categories: [ { name: 'قبل الذبح', ref: 'Codex', items: ['فحص بيطري', 'فصل المريضة'] } ] },
-      bakery: { label: 'مخبز', icon: '🥖', categories: [ { name: 'المواد الأولية', ref: 'ISO', items: ['سجلات التتبع', 'تخزين جاف'] } ] },
-      factory: { label: 'مصنع', icon: '🏭', categories: [ { name: 'التعبئة', ref: 'ISO', items: ['مواد معتمدة', 'وسم صحيح'] } ] },
-      cafe: { label: 'كافيه', icon: '☕', categories: [ { name: 'النظافة', ref: 'GFSI', items: ['نظافة الآلات', 'نظافة الأكواب'] } ] },
-      warehouse: { label: 'مستودع', icon: '📦', categories: [ { name: 'التخزين', ref: 'Codex', items: ['رفوف مرتفعة', 'تدوير FIFO'] } ] }
+      restaurant: {
+        label: 'مطعم', icon: '🍽️', description: 'مطعم / مأكولات جاهزة',
+        categories: [
+          { name: 'الصحة الشخصية للعاملين', ref: 'Codex CAC/RCP 1-1969 §7',
+            items: ['شهادات صحية سارية لجميع العاملين','نظافة الأيدي والأظافر والزي الرسمي','وجود مغاسل أيدي مزودة بصابون ومطهر','عدم وجود جروح مكشوفة أو أمراض معدية','تدريب موثق على النظافة الشخصية'] },
+          { name: 'النظافة والتعقيم', ref: 'Codex §6 / GFSI',
+            items: ['نظافة أسطح التحضير والمعدات','برنامج تنظيف وتعقيم موثق (SSOP)','نظافة الأرضيات والجدران والأسقف','فصل مواد التنظيف عن مناطق الطعام'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP - CCP',
+            items: ['حرارة التبريد 0-4°م موثقة يومياً','حرارة التجميد ≤ -18°م','حرارة الطهي ≥ 75°م للحم والدواجن','حرارة حفظ الطعام الساخن ≥ 63°م','سجلات حرارة دورية معتمدة'] },
+          { name: 'منع التلوث التبادلي', ref: 'HACCP / ISO 22000',
+            items: ['لوحات تقطيع منفصلة (نيء/مطبوخ)','فصل مناطق التحضير عن مناطق التقديم','عدم تلامس النيء مع الجاهز للأكل','أدوات مخصصة لكل نوع غذاء'] },
+          { name: 'المياه والمرافق', ref: 'WHO / Codex',
+            items: ['مصدر مياه صالح للشرب','صرف صحي سليم وغير مسدود','إضاءة وتهوية كافية','وجود شفاطات لسحب الأبخرة'] },
+          { name: 'مكافحة الحشرات', ref: 'Codex / IPM',
+            items: ['عقد ساري مع شركة مكافحة معتمدة','مصائد وأجهزة طاردة تعمل','غياب آثار حشرات أو قوارض','شبك معدني على النوافذ والفتحات'] },
+          { name: 'التتبع والتوثيق (HACCP)', ref: 'ISO 22000:2018',
+            items: ['خطة HACCP موثقة ومحدثة','سجلات تتبع مصدر المواد الأولية','إجراء استدعاء (Recall) موثق ومُختبر','سجلات تدريب العاملين'] }
+        ]
+      },
+      butcher: {
+        label: 'ملحمة', icon: '🥩', description: 'بيع وتجهيز اللحوم',
+        categories: [
+          { name: 'الصحة الشخصية', ref: 'Codex CAC/RCP 1-1969 §7',
+            items: ['شهادات صحية سارية','ارتداء الزي وأغطية الرأس','نظافة الأيدي والأظافر','مغسلة أيدي مع صابون ومطهر','عدم وجود جروح مكشوفة'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP - CCP',
+            items: ['غرفة التبريد 0-4°م موثقة','المجمد ≤ -18°م','مقياس حرارة في كل وحدة تبريد','سجلات يومية للحرارة','فصل اللحوم النيئة عن المطبوخة'] },
+          { name: 'النظافة والتعقيم', ref: 'GFSI',
+            items: ['نظافة أسطح التقطيع والموازين','تعقيم السكاكين بين الاستخدامات','نظافة الأرضيات والجدران','تخزين مواد التنظيف منفصلة','نظافة صناديق النفايات مع أغطية'] },
+          { name: 'منع التلوث التبادلي', ref: 'HACCP',
+            items: ['لوحات تقطيع منفصلة (أحمر/دواجن)','فصل التجهيز عن البيع','عدم تلامس النيء مع الجاهز','أدوات مخصصة لكل نوع لحم'] },
+          { name: 'المياه والمرافق', ref: 'WHO / Codex',
+            items: ['مياه صالحة للشرب','صرف سليم','إضاءة وتهوية كافية'] },
+          { name: 'مكافحة الحشرات', ref: 'Codex / IPM',
+            items: ['عقد مكافحة ساري','مصائد وأجهزة تعمل','غياب آثار حشرات/قوارض','شبك معدني على الفتحات'] },
+          { name: 'التتبع والتوثيق', ref: 'ISO 22000',
+            items: ['سجلات تتبع مصدر كل دفعة','خطة HACCP موثقة','سجلات تدريب','إجراء استدعاء موثق'] }
+        ]
+      },
+      supermarket: {
+        label: 'سوبرماركت', icon: '🛒', description: 'متجر أغذية تجزئة',
+        categories: [
+          { name: 'التخزين والعرض', ref: 'Codex §5',
+            items: ['فصل الأغذية عن المواد غير الغذائية','رفوف نظيفة ومرتفعة عن الأرض','تدوير المخزون (FIFO/FEFO)','فحص تواريخ الصلاحية دورياً'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP',
+            items: ['ثلاجات العرض 0-4°م','المجمدات ≤ -18°م','مقاييس حرارة تعمل','سجلات حرارة يومية'] },
+          { name: 'النظافة', ref: 'GFSI',
+            items: ['نظافة الأرضيات والرفوف','برنامج تنظيف موثق','نظافة عربات التسوق وسلال اليد'] },
+          { name: 'منع التلوث التبادلي', ref: 'HACCP',
+            items: ['فصل اللحوم النيئة عن الجاهزة','أقسام منفصلة (لحوم/ألبان/خضار)','أدوات تقطيع مخصصة لكل قسم'] },
+          { name: 'مكافحة الحشرات', ref: 'IPM',
+            items: ['عقد مكافحة ساري','مصائد على الأبواب','غياب آثار حشرات/قوارض'] },
+          { name: 'التتبع والاستدعاء', ref: 'ISO 22000',
+            items: ['سجلات تتبع الموردين','إجراء استدعاء (Recall) موثق','لوحة إعلان أرقام الاستدعاء'] }
+        ]
+      },
+      slaughterhouse: {
+        label: 'مسلخ', icon: '🐄', description: 'ذبح وتجهيز',
+        categories: [
+          { name: 'قبل الذبح (Ante-mortem)', ref: 'Codex §4.4',
+            items: ['فحص بيطري قبل الذبح','فصل الحيوانات المريضة','سجلات الفحص البيطري','مياه شرب للحيوانات'] },
+          { name: 'بعد الذبح (Post-mortem)', ref: 'Codex §4.4',
+            items: ['فحص بيطري بعد الذبح','ختم اللحوم الصالحة','إتلاف اللحوم غير الصالحة فوراً'] },
+          { name: 'الصحة الشخصية', ref: 'Codex §7',
+            items: ['شهادات صحية للعاملين','زي وأغطية رأس','مغاسل أيدي مع مطهر'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP',
+            items: ['غرف تبريد 0-4°م','مجمدات ≤ -18°م','سجلات حرارة موثقة'] },
+          { name: 'النظافة والتعقيم', ref: 'GFSI',
+            items: ['تعقيم الأدوات والسكاكين','نظافة صالات الذبح','برنامج SSOP موثق'] },
+          { name: 'النفايات والمخلفات', ref: 'Codex §6',
+            items: ['إدارة مخلفات الذبح بشكل صحي','حاويات نفايات مغلقة','صرف صحي مطابق'] },
+          { name: 'التتبع والتوثيق', ref: 'ISO 22000',
+            items: ['تتبع أصل كل ذبيحة','خطة HACCP موثقة','سجلات تدريب'] }
+        ]
+      },
+      bakery: {
+        label: 'مخبز / حلويات', icon: '🥖', description: 'مخبوزات وحلويات',
+        categories: [
+          { name: 'الصحة الشخصية', ref: 'Codex §7',
+            items: ['شهادات صحية سارية','نظافة اليدين والزي','مغاسل أيدي مع مطهر'] },
+          { name: 'النظافة والتعقيم', ref: 'GFSI',
+            items: ['نظافة أسطح العجين والمعدات','تعقيم الأدوات بين الدفعات','نظافة الأفران وقاعات التحضير'] },
+          { name: 'المواد الأولية', ref: 'ISO 22000',
+            items: ['سجلات تتبع الدقيق والمواد','فحص المواد عند الاستلام','تخزين المواد الجافة بشكل صحي'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP',
+            items: ['حرارة التخزين مناسبة','حرارة الطهي موثقة','تبريد سريع للحلويات الحساسة'] },
+          { name: 'منع التلوث التبادلي', ref: 'HACCP',
+            items: ['فصل مناطق العجين عن الحشوات','فصل الحلويات بالكريمة عن الجافة','أدوات مخصصة'] },
+          { name: 'مكافحة الحشرات', ref: 'IPM',
+            items: ['عقد ساري','مصائد تعمل','غياب آثار حشرات/قوارض'] },
+          { name: 'التتبع والتوثيق', ref: 'ISO 22000',
+            items: ['خطة HACCP موثقة','سجلات تدريب','إجراء استدعاء موثق'] }
+        ]
+      },
+      factory: {
+        label: 'مصنع أغذية', icon: '🏭', description: 'تصنيع وتعبئة',
+        categories: [
+          { name: 'تصميم المنشأة', ref: 'Codex §4',
+            items: ['فصل المناطق النظيفة عن غير النظيفة','مسار خطي للإنتاج (Linear Flow)','مواد بناء قابلة للتنظيف','صرف صحي مطابق'] },
+          { name: 'الصحة الشخصية', ref: 'Codex §7',
+            items: ['شهادات صحية','زي وأغطية رأس وأحذية','مغاسل أيدي مع مطهر','برنامج صحي للعاملين'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP',
+            items: ['CCPs محددة ومُراقبة','سجلات حرارة موثقة','تحقق (Verification) دوري'] },
+          { name: 'النظافة والتعقيم', ref: 'GFSI',
+            items: ['SSOP موثق','تعقيم خطوط الإنتاج','نظافة البيئة (Environmental Monitoring)'] },
+          { name: 'منع التلوث التبادلي', ref: 'HACCP',
+            items: ['فصل الأغذية النيئة عن المطبوخة','فصل المواد المسببة للحساسية','أدوات مخصصة'] },
+          { name: 'التعبئة والتغليف', ref: 'Codex §5',
+            items: ['مواد تغليف غذائية معتمدة','وسم صحيح (Batch/Lot/Date)','تخزين التغليف بشكل نظيف'] },
+          { name: 'التتبع والاستدعاء', ref: 'ISO 22000',
+            items: ['تتبع كل دفعة من الخام للمنتج','إجراء استدعاء موثق ومُختبر دورياً','خطة HACCP موثقة ومحدثة'] }
+        ]
+      },
+      cafe: {
+        label: 'كافيه', icon: '☕', description: 'مشروبات ووجبات خفيفة',
+        categories: [
+          { name: 'الصحة الشخصية', ref: 'Codex §7',
+            items: ['شهادات صحية','نظافة الأيدي والزي','مغاسل أيدي مع مطهر'] },
+          { name: 'النظافة', ref: 'GFSI',
+            items: ['نظافة آلات القهوة والمعدات','نظافة الأكواب والأدوات','نظافة الأسطح والطاولات'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP',
+            items: ['ثلاجات 0-4°م','حرارة الماء ≥ 90°م للتحضير','سجلات حرارة'] },
+          { name: 'المياه والثلج', ref: 'WHO',
+            items: ['مياه صالحة للشرب','ثلج من مياه صالحة','تنظيف آلات الثلج دورياً'] },
+          { name: 'التخزين', ref: 'Codex §5',
+            items: ['تخزين المواد الجافة بشكل صحي','تخزين الحلويات في مكان مخصص'] },
+          { name: 'مكافحة الحشرات', ref: 'IPM',
+            items: ['عقد ساري','غياب آثار حشرات/قوارض'] }
+        ]
+      },
+      warehouse: {
+        label: 'مستودع أغذية', icon: '📦', description: 'تخزين وتوزيع',
+        categories: [
+          { name: 'تخزين الأغذية', ref: 'Codex §5',
+            items: ['رفوف مرتفعة عن الأرض','فصل الأغذية عن غير الغذائية','تدوير FIFO/FEFO','فحص تواريخ الصلاحية'] },
+          { name: 'التحكم بالحرارة', ref: 'HACCP',
+            items: ['غرف تبريد 0-4°م','غرف تجميد ≤ -18°م','سجلات حرارة دورية'] },
+          { name: 'النظافة', ref: 'GFSI',
+            items: ['نظافة الأرضيات والرفوف','برنامج تنظيف موثق'] },
+          { name: 'مكافحة الحشرات', ref: 'IPM',
+            items: ['عقد مكافحة ساري','مصائد على الأبواب','شبك على الفتحات'] },
+          { name: 'التتبع', ref: 'ISO 22000',
+            items: ['سجلات تتبع الموردين والعملاء','إجراء استدعاء موثق'] }
+        ]
+      }
     };
 
     let currentFacilityKey = null, currentChecklistState = {}, windowInspections = [], editingInspection = null, editingFacilityKey = null, editingChecklistState = {};
@@ -245,7 +382,13 @@
     
     function renderFacilityCards() {
       const c = document.getElementById('facility-cards'); c.innerHTML = '';
-      Object.keys(FACILITY_CHECKLISTS).forEach(k => { const f = FACILITY_CHECKLISTS[k]; c.innerHTML += `<button type="button" onclick="selectFacility('${k}')" class="bg-red-50 border-2 border-red-200 p-6 rounded-xl hover:border-red-600 transition text-center"><div class="text-5xl mb-3">${f.icon}</div><div class="font-bold text-lg text-red-700">${f.label}</div></button>`; });
+      Object.keys(FACILITY_CHECKLISTS).forEach(k => { 
+        const f = FACILITY_CHECKLISTS[k]; 
+        c.innerHTML += `<button type="button" onclick="selectFacility('${k}')" class="bg-red-50 border-2 border-red-200 p-6 rounded-xl hover:border-red-600 transition text-center">
+          <div class="text-5xl mb-3">${f.icon}</div><div class="font-bold text-lg text-red-700">${f.label}</div>
+          <div class="text-xs text-gray-500 mt-1">${f.description}</div>
+        </button>`; 
+      });
     }
     function selectFacility(k) {
       currentFacilityKey = k; const f = FACILITY_CHECKLISTS[k]; currentChecklistState = {};
@@ -260,11 +403,11 @@
     function buildHTML(f, state) {
       let h = '';
       f.categories.forEach((cat, ci) => {
-        h += `<div class="bg-white border p-4 rounded-xl"><h4 class="font-bold text-red-700 border-b pb-2 mb-2">${ci+1}. ${cat.name}</h4><div class="space-y-1">`;
+        h += `<div class="bg-white border p-4 rounded-xl"><h4 class="font-bold text-red-700 border-b pb-2 mb-2">${ci+1}. ${cat.name}</h4><p class="text-xs text-gray-400 mb-2">المرجع: ${cat.ref}</p><div class="space-y-1">`;
         cat.items.forEach((item, ii) => {
           const key = `c${ci}_i${ii}`; const s = state[key] || {status: null, note: ''};
-          const p = s.status === 'pass' ? 'bg-green-600 text-white' : 'bg-white text-green-700';
-          const g = s.status === 'fail' ? 'bg-red-600 text-white' : 'bg-white text-red-700';
+          const p = s.status === 'pass' ? 'bg-green-600 text-white' : 'bg-white text-green-700 border-green-300';
+          const g = s.status === 'fail' ? 'bg-red-600 text-white' : 'bg-white text-red-700 border-red-300';
           h += `<div class="flex flex-col md:flex-row gap-2 p-2 border-b border-gray-100"><div class="flex-1 text-sm">${item}</div><div class="flex gap-1 shrink-0">
               <button type="button" data-key="${key}" data-status="pass" class="status-btn px-2 py-1 text-xs rounded border ${p}">مطابق</button>
               <button type="button" data-key="${key}" data-status="fail" class="status-btn px-2 py-1 text-xs rounded border ${g}">غير مطابق</button>
@@ -299,41 +442,23 @@
       const inputField = document.getElementById('general_notes');
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-      if (!SpeechRecognition) {
-        alert("متصفحك لا يدعم ميزة تحويل الصوت إلى نص. يرجى استخدام متصفح Chrome أو Safari.");
-        return;
-      }
-      if (!navigator.onLine) {
-        alert("تحويل الصوت إلى نص يتطلب اتصالاً بالإنترنت. يرجى كتابة الملاحظات يدوياً.");
-        return;
-      }
+      if (!SpeechRecognition) { alert("متصفحك لا يدعم ميزة تحويل الصوت إلى نص. يرجى استخدام متصفح Chrome أو Safari."); return; }
+      if (!navigator.onLine) { alert("تحويل الصوت إلى نص يتطلب اتصالاً بالإنترنت. يرجى كتابة الملاحظات يدوياً."); return; }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = 'ar-LB'; // اللهجة اللبنانية
+      recognition.lang = 'ar-LB'; 
       recognition.interimResults = false;
 
-      // تغيير شكل الزر
-      btn.textContent = '🔴'; 
-      btn.classList.add('animate-pulse');
-
+      btn.textContent = '🔴'; btn.classList.add('animate-pulse');
       recognition.start();
 
       recognition.onresult = (event) => {
         const text = event.results[0][0].transcript;
-        // إضافة النص المسموع إلى الحقل (مع مسافة إذا كان هناك نص سابق)
         inputField.value = inputField.value ? inputField.value + ' - ' + text : text;
       };
 
-      recognition.onend = () => {
-        btn.textContent = '🎤';
-        btn.classList.remove('animate-pulse');
-      };
-      
-      recognition.onerror = () => {
-        btn.textContent = '🎤';
-        btn.classList.remove('animate-pulse');
-        alert("حدث خطأ أثناء التسجيل، يرجى المحاولة مجدداً.");
-      };
+      recognition.onend = () => { btn.textContent = '🎤'; btn.classList.remove('animate-pulse'); };
+      recognition.onerror = () => { btn.textContent = '🎤'; btn.classList.remove('animate-pulse'); alert("حدث خطأ أثناء التسجيل، يرجى المحاولة مجدداً."); };
     };
 
     // --- 6. Submit & PDF ---
