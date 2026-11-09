@@ -9,7 +9,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
     body { font-family: 'Cairo', sans-serif; }
-    /* شريط حالة الاتصال */
     #status-bar { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-weight: bold; font-size: 14px; z-index: 9999; transition: 0.3s; }
     .online { background: #16a34a; color: white; transform: translateY(100%); }
     .offline { background: #dc2626; color: white; transform: translateY(0); }
@@ -17,7 +16,6 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <!-- شريط حالة الاتصال -->
   <div id="status-bar" class="online">متصل بالإنترنت</div>
 
   <!-- تسجيل الدخول -->
@@ -93,12 +91,9 @@
             
             <div>
               <label class="block text-sm font-semibold mb-1">الجهة / الوزارة</label>
-              <select id="ministry" class="w-full px-4 py-2 border rounded-lg bg-white">
-                <option value="الهيئة اللبنانية لسلامة الغذاء">الهيئة اللبنانية لسلامة الغذاء</option>
-                <option value="وزارة الصحة العامة">وزارة الصحة العامة</option>
-                <option value="وزارة الزراعة">وزارة الزراعة</option>
-                <option value="وزارة الصناعة">وزارة الصناعة</option>
-                <option value="وزارة الاقتصاد">وزارة الاقتصاد</option>
+              <!-- الحقل معطل (Disabled) ليأخذ قيمته تلقائياً -->
+              <select id="ministry" disabled class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 font-bold cursor-not-allowed">
+                <option value="">جاري التحميل...</option>
               </select>
             </div>
             <div>
@@ -121,7 +116,8 @@
 
             <div>
               <label class="block text-sm font-semibold mb-1">اسم المراقب المعتمد</label>
-              <input type="text" id="inspector_name" required class="w-full px-4 py-2 border rounded-lg bg-white">
+              <!-- الحقل للقراءة فقط (Readonly) -->
+              <input type="text" id="inspector_name" required readonly class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 font-bold cursor-not-allowed">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">تاريخ الكشف</label>
@@ -176,7 +172,6 @@
           </div>
         </div>
 
-        <!-- الملاحظات العامة + الميكروفون + الصور -->
         <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
           <h3 class="font-bold text-red-700 border-b pb-2">5. ملاحظات عامة وتوصيات</h3>
           
@@ -248,10 +243,18 @@
       <div id="admin-users-view" class="hidden">
         <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
           <h3 class="font-bold text-red-700 mb-3">إضافة مراقب جديد</h3>
-          <form id="add-user-form" onsubmit="addNewUser(event)" class="flex flex-col md:flex-row gap-3">
-            <input type="text" id="new_username" required placeholder="اسم المستخدم (مثال: inspector2)" class="flex-1 px-4 py-2 border rounded-lg bg-white">
-            <input type="text" id="new_password" required placeholder="كلمة المرور" class="flex-1 px-4 py-2 border rounded-lg bg-white">
-            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition">إضافة</button>
+          <form id="add-user-form" onsubmit="addNewUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" id="new_full_name" required placeholder="الاسم الكامل (مثال: أحمد علي)" class="px-4 py-2 border rounded-lg bg-white">
+            <select id="new_ministry" class="px-4 py-2 border rounded-lg bg-white">
+              <option value="الهيئة اللبنانية لسلامة الغذاء">الهيئة اللبنانية لسلامة الغذاء</option>
+              <option value="وزارة الصحة العامة">وزارة الصحة العامة</option>
+              <option value="وزارة الزراعة">وزارة الزراعة</option>
+              <option value="وزارة الصناعة">وزارة الصناعة</option>
+              <option value="وزارة الاقتصاد">وزارة الاقتصاد</option>
+            </select>
+            <input type="text" id="new_username" required placeholder="اسم المستخدم للدخول (مثال: inspector2)" class="px-4 py-2 border rounded-lg bg-white">
+            <input type="text" id="new_password" required placeholder="كلمة المرور" class="px-4 py-2 border rounded-lg bg-white">
+            <button type="submit" class="md:col-span-2 bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition">إضافة المراقب</button>
           </form>
         </div>
         
@@ -259,7 +262,9 @@
           <table class="w-full text-right border-collapse">
             <thead>
               <tr class="bg-gray-800 text-white text-sm">
-                <th class="p-3">اسم المستخدم</th>
+                <th class="p-3">الاسم الكامل</th>
+                <th class="p-3">الوزارة / الجهة</th>
+                <th class="p-3">اسم المستخدم للدخول</th>
                 <th class="p-3">الصلاحية</th>
                 <th class="p-3">إجراء</th>
               </tr>
@@ -282,13 +287,15 @@
       <div class="p-4 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 p-4 rounded-xl">
           <div><label class="text-xs">اسم المؤسسة</label><input type="text" id="edit_shop_name" class="w-full px-3 py-2 border rounded"></div>
-          <div><label class="text-xs">المراقب</label><input type="text" id="edit_inspector" class="w-full px-3 py-2 border rounded"></div>
+          
+          <!-- اسم المراقب والوزارة في نافذة التعديل (للقراءة فقط) -->
+          <div><label class="text-xs">المراقب</label><input type="text" id="edit_inspector" readonly class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600 cursor-not-allowed"></div>
           <div><label class="text-xs">التاريخ</label><input type="date" id="edit_inspect_date" class="w-full px-3 py-2 border rounded"></div>
           <div><label class="text-xs">الحرارة</label><input type="text" id="edit_temp_info" class="w-full px-3 py-2 border rounded"></div>
           
           <div>
             <label class="text-xs">الجهة / الوزارة</label>
-            <select id="edit_ministry" class="w-full px-3 py-2 border rounded">
+            <select id="edit_ministry" disabled class="w-full px-3 py-2 border rounded bg-gray-100 text-gray-600 cursor-not-allowed">
               <option value="الهيئة اللبنانية لسلامة الغذاء">الهيئة اللبنانية لسلامة الغذاء</option>
               <option value="وزارة الصحة العامة">وزارة الصحة العامة</option>
               <option value="وزارة الزراعة">وزارة الزراعة</option>
@@ -488,6 +495,7 @@
 
     let currentFacilityKey = null, currentChecklistState = {}, windowInspections = [], editingInspection = null, editingFacilityKey = null, editingChecklistState = {};
     let currentImages = [];
+    let loggedInUser = null; // 🔥 لحفظ بيانات المراقب (الاسم والوزارة)
     const CACHE_KEY = 'lfsa_cache_v1';
 
     function getCache() { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); }
@@ -544,6 +552,9 @@
         const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value }) });
         const data = await res.json();
         if (res.ok && data.success) {
+          // 🔥 تخزين بيانات المراقب
+          loggedInUser = { username: data.username, full_name: data.full_name, ministry: data.ministry };
+          
           document.getElementById('login-section').classList.add('hidden');
           if (data.role === 'admin') { 
             document.getElementById('admin-section').classList.remove('hidden'); 
@@ -579,6 +590,13 @@
       document.getElementById('facility_type').value = f.label; document.getElementById('facility_key').value = k;
       document.getElementById('facility_type_display').textContent = f.icon + ' ' + f.label;
       document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+      
+      // 🔥 تعبئة اسم المراقب والوزارة تلقائياً
+      if (loggedInUser) {
+        document.getElementById('inspector_name').value = loggedInUser.full_name;
+        document.getElementById('ministry').innerHTML = `<option value="${loggedInUser.ministry}">${loggedInUser.ministry}</option>`;
+      }
+      
       renderChecklist(document.getElementById('checklist-container'), f, currentChecklistState, 'count_m', 'count_g');
     }
 
@@ -757,14 +775,16 @@
         tbody.innerHTML = '';
         
         if (users.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-gray-500">لا يوجد مراقبون مسجلون حالياً</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-500">لا يوجد مراقبون مسجلون حالياً</td></tr>';
           return;
         }
 
         users.forEach(u => {
           tbody.innerHTML += `
             <tr>
-              <td class="p-3 font-bold">${u.username}</td>
+              <td class="p-3 font-bold">${u.full_name || u.username}</td>
+              <td class="p-3 text-sm text-gray-600">${u.ministry || '-'}</td>
+              <td class="p-3 text-gray-500">${u.username}</td>
               <td class="p-3"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">مراقب ميداني</span></td>
               <td class="p-3">
                 <button onclick="deleteUser('${u.username}')" class="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1 rounded text-xs font-bold transition">حذف</button>
@@ -779,6 +799,8 @@
 
     async function addNewUser(e) {
       e.preventDefault();
+      const full_name = document.getElementById('new_full_name').value.trim();
+      const ministry = document.getElementById('new_ministry').value;
       const username = document.getElementById('new_username').value.trim();
       const password = document.getElementById('new_password').value.trim();
       
@@ -786,7 +808,7 @@
         const res = await fetch('/api/users', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ full_name, ministry, username, password })
         });
         const data = await res.json();
         
@@ -832,7 +854,9 @@
         editingChecklistState[`c${ci}_i${ii}`] = { status: found ? found.status : null, note: found ? found.note : '' };
       }));
       
-      document.getElementById('edit_shop_name').value = item.shop_name || ''; document.getElementById('edit_inspector').value = item.inspector || '';
+      document.getElementById('edit_shop_name').value = item.shop_name || ''; 
+      // في التعديل، لا يمكن تغيير اسم المراقب أو الوزارة
+      document.getElementById('edit_inspector').value = item.inspector || '';
       document.getElementById('edit_inspect_date').value = item.inspect_date || ''; document.getElementById('edit_temp_info').value = item.temp_info || '';
       
       document.getElementById('edit_ministry').value = item.ministry || 'الهيئة اللبنانية لسلامة الغذاء';
