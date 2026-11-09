@@ -45,7 +45,7 @@ app.post('/api/login', async (req, res) => {
   
   // حساب المدير الثابت
   if (username === 'admin' && password === 'admin123') {
-    return res.json({ success: true, role: 'admin', username: 'admin' });
+    return res.json({ success: true, role: 'admin', username: 'admin', full_name: 'مدير النظام', ministry: 'الهيئة اللبنانية لسلامة الغذاء' });
   }
 
   const db = await getCloudDB();
@@ -54,11 +54,19 @@ app.post('/api/login', async (req, res) => {
   if (!user) {
     return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   }
-  res.json({ success: true, role: user.role || 'inspector', username: user.username });
+  
+  // إرجاع الاسم الكامل والوزارة مع بيانات الدخول
+  res.json({ 
+    success: true, 
+    role: user.role || 'inspector', 
+    username: user.username,
+    full_name: user.full_name || user.username,
+    ministry: user.ministry || 'الهيئة اللبنانية لسلامة الغذاء'
+  });
 });
 
 // ==========================================
-// 🔥 مسارات إدارة المراقبين (جديد)
+// 🔥 مسارات إدارة المراقبين
 // ==========================================
 
 // جلب كل المراقبين
@@ -67,21 +75,20 @@ app.get('/api/users', async (req, res) => {
   res.json(db.users || []);
 });
 
-// إضافة مراقب جديد
+// إضافة مراقب جديد (مع الاسم الكامل والوزارة)
 app.post('/api/users', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'الاسم وكلمة المرور مطلوبان' });
+    const { username, password, full_name, ministry } = req.body;
+    if (!username || !password || !full_name) return res.status(400).json({ error: 'الاسم الكامل، اسم المستخدم وكلمة المرور مطلوبان' });
 
     const db = await getCloudDB();
     if (!db.users) db.users = [];
 
-    // التحقق من عدم تكرار الاسم
     if (db.users.find(u => u.username === username) || username === 'admin') {
       return res.status(400).json({ error: 'اسم المستخدم موجود مسبقاً' });
     }
 
-    db.users.push({ username, password, role: 'inspector' });
+    db.users.push({ username, password, full_name, ministry, role: 'inspector' });
     await saveCloudDB(db);
     res.json({ success: true, message: 'تمت إضافة المراقب بنجاح' });
   } catch (err) {
