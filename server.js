@@ -43,22 +43,70 @@ async function saveCloudDB(dbData) {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
+  // حساب المدير الثابت
   if (username === 'admin' && password === 'admin123') {
     return res.json({ success: true, role: 'admin', username: 'admin' });
-  }
-  if (username === 'inspector1' && password === '1234') {
-    return res.json({ success: true, role: 'inspector', username: 'inspector1' });
   }
 
   const db = await getCloudDB();
   const user = db.users && db.users.find(u => u.username === username && u.password === password);
+  
   if (!user) {
     return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   }
-  res.json({ success: true, role: user.role, username: user.username });
+  res.json({ success: true, role: user.role || 'inspector', username: user.username });
 });
 
-// 2. إضافة كشف جديد
+// ==========================================
+// 🔥 مسارات إدارة المراقبين (جديد)
+// ==========================================
+
+// جلب كل المراقبين
+app.get('/api/users', async (req, res) => {
+  const db = await getCloudDB();
+  res.json(db.users || []);
+});
+
+// إضافة مراقب جديد
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'الاسم وكلمة المرور مطلوبان' });
+
+    const db = await getCloudDB();
+    if (!db.users) db.users = [];
+
+    // التحقق من عدم تكرار الاسم
+    if (db.users.find(u => u.username === username) || username === 'admin') {
+      return res.status(400).json({ error: 'اسم المستخدم موجود مسبقاً' });
+    }
+
+    db.users.push({ username, password, role: 'inspector' });
+    await saveCloudDB(db);
+    res.json({ success: true, message: 'تمت إضافة المراقب بنجاح' });
+  } catch (err) {
+    res.status(500).json({ error: 'حدث خطأ أثناء الإضافة' });
+  }
+});
+
+// حذف مراقب
+app.delete('/api/users/:username', async (req, res) => {
+  try {
+    const db = await getCloudDB();
+    if (!db.users) return res.json({ success: true });
+
+    db.users = db.users.filter(u => u.username !== req.params.username);
+    await saveCloudDB(db);
+    res.json({ success: true, message: 'تم الحذف بنجاح' });
+  } catch (err) {
+    res.status(500).json({ error: 'حدث خطأ أثناء الحذف' });
+  }
+});
+
+// ==========================================
+// مسارات الكشوفات
+// ==========================================
+
 app.post('/api/inspections', async (req, res) => {
   try {
     const db = await getCloudDB();
@@ -68,9 +116,8 @@ app.post('/api/inspections', async (req, res) => {
     const nextId = maxId + 1;
 
     const newInspection = {
-      ...req.body, // التقاط كل الحقول بما فيها checklist
+      ...req.body,
       id: nextId,
-      ministry: req.body.ministry || 'الهيئة اللبنانية لسلامة الغذاء',
       created_at: new Date().toISOString()
     };
 
@@ -79,18 +126,15 @@ app.post('/api/inspections', async (req, res) => {
 
     res.json({ success: true, id: nextId, message: `تم حفظ الكشف بنجاح برقم: REC-2026-${nextId}` });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'حدث خطأ أثناء حفظ البيانات.' });
   }
 });
 
-// 3. جلب كل الكشوفات
 app.get('/api/inspections', async (req, res) => {
   const db = await getCloudDB();
   res.json(db.inspections || []);
 });
 
-// 4. جلب كشف واحد
 app.get('/api/inspections/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   const db = await getCloudDB();
@@ -99,7 +143,6 @@ app.get('/api/inspections/:id', async (req, res) => {
   res.json(inspection);
 });
 
-// 5. تعديل كشف (هذا المسار يحل مشكلة 404)
 app.put('/api/inspections/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -107,9 +150,7 @@ app.put('/api/inspections/:id', async (req, res) => {
     if (!db.inspections) db.inspections = [];
 
     const index = db.inspections.findIndex(i => i.id === id);
-    if (index === -1) {
-      return res.status(404).json({ success: false, error: 'الكشف غير موجود' });
-    }
+    if (index === -1) return res.status(404).json({ success: false, error: 'الكشف غير موجود' });
 
     db.inspections[index] = {
       ...db.inspections[index],
@@ -121,7 +162,6 @@ app.put('/api/inspections/:id', async (req, res) => {
     await saveCloudDB(db);
     res.json({ success: true, message: 'تم تحديث الكشف بنجاح' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, error: 'حدث خطأ أثناء التحديث.' });
   }
 });
