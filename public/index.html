@@ -1,1 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الهيئة اللبنانية لسلامة الغذاء - النظام الشامل</title>
+  <link rel="manifest" href="/manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    body { font-family: 'Cairo', sans-serif; }
+    #status-bar { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px; font-weight: bold; font-size: 14px; z-index: 9999; transition: 0.3s; }
+    .online { background: #16a34a; color: white; transform: translateY(100%); }
+    .offline { background: #dc2626; color: white; transform: translateY(0); }
+    #sig-canvas { border: 2px dashed #cbd5e1; border-radius: 8px; cursor: crosshair; width: 100%; height: 150px; touch-action: none; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <div id="status-bar" class="online">متصل بالإنترنت</div>
+
+  <!-- تسجيل الدخول -->
+  <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+      <div class="text-center mb-6 flex flex-col items-center">
+        <img src="logo.png" alt="شعار الهيئة" class="w-32 h-32 object-contain mb-4" onerror="this.style.display='none'">
+        <h1 class="text-2xl font-bold text-red-700">الهيئة اللبنانية لسلامة الغذاء</h1>
+        <p class="text-sm text-gray-500 mt-1">نظام كشف وتقييم الاشتراطات الصحية</p>
+      </div>
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">اسم المستخدم</label>
+          <input type="text" id="username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="admin أو inspector1">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">كلمة المرور</label>
+          <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="admin123 أو 1234">
+        </div>
+        <button type="submit" id="login-btn" class="w-full bg-red-700 text-white py-2 rounded-lg font-bold hover:bg-red-800 transition">تسجيل الدخول</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- اختيار نوع المؤسسة -->
+  <div id="facility-selection-section" class="hidden min-h-screen p-4 max-w-6xl mx-auto">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
+      <div class="flex justify-between items-start mb-6 border-b pb-4">
+        <div class="flex items-center gap-4">
+          <img src="logo.png" alt="شعار" class="w-16 h-16 object-contain shrink-0" onerror="this.style.display='none'">
+          <div>
+            <h1 class="text-2xl font-bold text-red-700">الهيئة اللبنانية لسلامة الغذاء</h1>
+            <p class="text-sm text-gray-500 mt-1">اختر نوع المؤسسة الغذائية لتحميل نموذج الكشف المفصل</p>
+          </div>
+        </div>
+        <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">تسجيل الخروج</button>
+      </div>
+      <div id="facility-cards" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- لوحة المراقب -->
+  <div id="inspector-section" class="hidden min-h-screen p-4 max-w-4xl mx-auto mb-10">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
+      <div class="flex justify-between items-center mb-6 border-b pb-4">
+        <div class="flex items-center gap-3">
+          <img src="logo.png" alt="شعار" class="w-12 h-12 object-contain shrink-0" onerror="this.style.display='none'">
+          <div>
+            <h1 class="text-xl font-bold text-red-700">الهيئة اللبنانية لسلامة الغذاء</h1>
+            <h2 class="text-sm font-semibold text-gray-600">استمارة الكشف الرقابي الميداني</h2>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="changeFacility()" class="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg hover:bg-yellow-200">تغيير المؤسسة</button>
+          <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">خروج</button>
+        </div>
+      </div>
+
+      <form id="inspection-form" onsubmit="submitInspection(event)" class="space-y-6">
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="font-bold text-red-700">1. بيانات المنشأة والمراقب</h3>
+            <button type="button" onclick="openQRScanner()" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg hover:bg-indigo-200 font-bold flex items-center gap-1">
+              📷 مسح بطاقة المؤسسة (QR)
+            </button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div>
+              <label class="block text-sm font-semibold mb-1">رقم الكشف (تلقائي)</label>
+              <input type="text" id="inspection_number_display" readonly class="w-full px-4 py-2 border rounded-lg bg-red-50 text-red-700 font-bold text-center cursor-not-allowed" value="سيتم التوليد عند الحفظ">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">نوع المؤسسة</label>
+              <div id="facility_type_display" class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 font-bold"></div>
+              <input type="hidden" id="facility_type">
+              <input type="hidden" id="facility_key">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold mb-1">اسم المؤسسة / المحل</label>
+              <div class="flex gap-1">
+                <input type="text" id="shop_name" required class="w-full px-4 py-2 border rounded-lg bg-white" onchange="checkShopHistory()">
+                <button type="button" onclick="openShopHistory()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm" title="عرض سجل المؤسسة">🕒 السجل</button>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold mb-1">الجهة / الوزارة</label>
+              <select id="ministry" disabled class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 font-bold cursor-not-allowed"></select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">المحافظة</label>
+              <select id="governorate" class="w-full px-4 py-2 border rounded-lg bg-white">
+                <option value="بيروت">بيروت</option>
+                <option value="جبل لبنان">جبل لبنان</option>
+                <option value="الشمال">الشمال</option>
+                <option value="عكار">عكار</option>
+                <option value="البقاع">البقاع</option>
+                <option value="بعلبك - الهرمل">بعلبك - الهرمل</option>
+                <option value="الجنوب">الجنوب</option>
+                <option value="النبطية">النبطية</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold mb-1">العنوان التفصيلي</label>
+              <input type="text" id="shop_address" required class="w-full px-4 py-2 border rounded-lg bg-white" placeholder="المدينة / البلدة، الشارع، اسم المبنى...">
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-1">اسم المراقب المعتمد</label>
+              <input type="text" id="inspector_name" required readonly class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 font-bold cursor-not-allowed">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">تاريخ الكشف</label>
+              <input type="date" id="inspect_date" required class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
+            <div class="md:col-span-2 bg-blue-50 p-2 rounded text-xs text-blue-800 flex items-center gap-2">
+              <span>📍 حالة الموقع:</span>
+              <span id="gps-status">جاري تحديد الموقع...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">2. القياسات والاشتراطات الفنية</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">حرارة التبريد / التجميد</label>
+              <input type="text" id="temp_info" placeholder="مثال: 4°م (براد)" class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">المطابقة (م)</label>
+              <input type="number" id="count_m" value="0" readonly class="w-full px-4 py-2 border rounded-lg bg-green-50 text-green-700 font-bold">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">عدم المطابقة (غير م)</label>
+              <input type="number" id="count_g" value="0" readonly class="w-full px-4 py-2 border rounded-lg bg-red-50 text-red-700 font-bold">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <h3 class="font-bold text-red-700 border-b pb-2 mb-4">3. قائمة التحقق (Checklist)</h3>
+          <div id="checklist-container" class="space-y-4"></div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">4. التقييم النهائي وإجراءات السلامة</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">النتيجة النهائية</label>
+              <select id="result" onchange="toggleFollowUp()" class="w-full px-4 py-2 border rounded-lg bg-white">
+                <option value="مستوفي الشروط الصحية">مستوفي الشروط الصحية</option>
+                <option value="غير مستوفي الشروط">غير مستوفي الشروط</option>
+                <option value="إنذار وإتلاف فوري">إنذار وإتلاف فوري</option>
+                <option value="إغلاق إداري مؤقت">إغلاق إداري مؤقت</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">مستوى الخطورة</label>
+              <select id="risk" class="w-full px-4 py-2 border rounded-lg bg-white">
+                <option value="منخفض (Low Risk)">منخفض</option>
+                <option value="متوسط (Medium Risk)">متوسط</option>
+                <option value="عالي / خطر داهم (Critical Hazard)">عالي / خطر داهم</option>
+              </select>
+            </div>
+            
+            <div id="follow-up-container" class="md:col-span-2 hidden bg-orange-50 border border-orange-200 p-3 rounded-lg">
+              <label class="block text-sm font-bold text-orange-800 mb-1">📅 تاريخ الزيارة التفتيشية اللاحقة (إلزامي):</label>
+              <input type="date" id="follow_up_date" class="w-full px-4 py-2 border border-orange-300 rounded-lg bg-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-4">
+          <h3 class="font-bold text-red-700 border-b pb-2">5. ملاحظات عامة وتوصيات</h3>
+          <div class="flex gap-2 items-start">
+            <textarea id="general_notes" rows="3" class="w-full px-4 py-2 border rounded-lg bg-white" placeholder="أدخل أي ملاحظات إضافية هنا... أو اضغط على الميكروفون للتحدث"></textarea>
+            <button type="button" id="general-mic-btn" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-3 text-xl rounded-lg border border-red-300 transition shadow-sm shrink-0" title="تسجيل صوتي">🎤</button>
+          </div>
+          <div class="mt-3">
+            <input type="file" id="image-input" accept="image/*" capture="environment" class="hidden" multiple onchange="handleImageUpload(event)">
+            <button type="button" onclick="document.getElementById('image-input').click()" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+              <span>📷</span> إرفاق صور للملاحظات
+            </button>
+            <div id="image-preview-container" class="flex flex-wrap gap-3 mt-3"></div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+          <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="font-bold text-red-700">6. توقيع المراقب المعتمد</h3>
+            <button type="button" onclick="clearSignature()" class="text-xs text-red-600 hover:underline">مسح التوقيع</button>
+          </div>
+          <canvas id="sig-canvas"></canvas>
+          <p class="text-xs text-gray-500 text-center">يرجى التوقيع بإصبعك أو الماوس داخل المربع.</p>
+        </div>
+
+        <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-700 transition shadow-lg">حفظ الكشف وإرساله</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- لوحة المدير -->
+  <div id="admin-section" class="hidden min-h-screen p-4 max-w-7xl mx-auto">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
+      <div class="flex justify-between items-center mb-6 border-b pb-4">
+        <div class="flex items-center gap-3">
+          <img src="logo.png" alt="شعار" class="w-12 h-12 object-contain shrink-0" onerror="this.style.display='none'">
+          <div>
+            <h1 class="text-xl font-bold text-red-700">الهيئة اللبنانية لسلامة الغذاء</h1>
+            <h2 class="text-sm font-semibold text-gray-600">لوحة تحكم المدير</h2>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="switchAdminTab('inspections')" id="tab-btn-inspections" class="text-sm bg-red-700 text-white px-4 py-2 rounded-lg font-bold">الكشوفات</button>
+          <button onclick="switchAdminTab('analytics')" id="tab-btn-analytics" class="text-sm bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">الإحصائيات</button>
+          <button onclick="switchAdminTab('users')" id="tab-btn-users" class="text-sm bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">المراقبون</button>
+          <button onclick="switchAdminTab('templates')" id="tab-btn-templates" class="text-sm bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">إدارة القوالب</button>
+          <button onclick="logout()" class="text-sm bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300">خروج</button>
+        </div>
+      </div>
+      
+      <div id="admin-inspections-view">
+        <div class="flex justify-between items-center mb-3">
+          <div id="pending-sync-alert" class="hidden bg-yellow-100 border-r-4 border-yellow-500 text-yellow-700 p-2 rounded text-sm">
+            لديك <span id="pending-count" class="font-bold">0</span> كشوفات بانتظار المزامنة.
+          </div>
+          <button onclick="exportToExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700 transition">📊 تصدير Excel</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr class="bg-red-700 text-white text-sm">
+                <th class="p-3">رقم الكشف</th>
+                <th class="p-3">الجهة</th>
+                <th class="p-3">المحافظة</th>
+                <th class="p-3">النوع</th>
+                <th class="p-3">المحل</th>
+                <th class="p-3">المراقب</th>
+                <th class="p-3">التاريخ</th>
+                <th class="p-3">م / غير م</th>
+                <th class="p-3">النتيجة</th>
+                <th class="p-3">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="inspections-table-body" class="text-sm divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-analytics-view" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white border border-gray-200 p-4 rounded-xl">
+            <h3 class="font-bold text-center mb-4 text-gray-700">نسبة المطابقة العامة</h3>
+            <canvas id="passFailChart"></canvas>
+          </div>
+          <div class="bg-white border border-gray-200 p-4 rounded-xl">
+            <h3 class="font-bold text-center mb-4 text-gray-700">توزيع المؤسسات حسب النوع</h3>
+            <canvas id="facilityTypeChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-users-view" class="hidden">
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+          <h3 class="font-bold text-red-700 mb-3">إضافة مراقب جديد</h3>
+          <form id="add-user-form" onsubmit="addNewUser(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" id="new_full_name" required placeholder="الاسم الكامل" class="px-4 py-2 border rounded-lg bg-white">
+            <select id="new_ministry" class="px-4 py-2 border rounded-lg bg-white">
+              <option value="الهيئة اللبنانية لسلامة الغذاء">الهيئة اللبنانية لسلامة الغذاء</option>
+              <option value="وزارة الصحة العامة">وزارة الصحة العامة</option>
+              <option value="وزارة الزراعة">وزارة الزراعة</option>
+              <option value="وزارة الصناعة">وزارة الصناعة</option>
+              <option value="وزارة الاقتصاد">وزارة الاقتصاد</option>
+            </select>
+            <input type="text" id="new_username" required placeholder="اسم المستخدم" class="px-4 py-2 border rounded-lg bg-white">
+            <input type="text" id="new_password" required placeholder="كلمة المرور" class="px-4 py-2 border rounded-lg bg-white">
+            <button type="submit" class="md:col-span-2 bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition">إضافة المراقب</button>
+          </form>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right border-collapse">
+            <thead>
+              <tr class="bg-gray-800 text-white text-sm">
+                <th class="p-3">الاسم الكامل</th>
+                <th class="p-3">الوزارة / الجهة</th>
+                <th class="p-3">اسم المستخدم</th>
+                <th class="p-3">الصلاحية</th>
+                <th class="p-3">إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body" class="text-sm divide-y divide-gray-200"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-templates-view" class="hidden">
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+          <h3 class="font-bold text-red-700 mb-3">إضافة بند جديد لقائمة التحقق</h3>
+          <form id="add-template-item-form" onsubmit="addTemplateItem(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-semibold mb-1 block">اختر نوع المؤسسة:</label>
+              <select id="tpl_facility" class="w-full px-4 py-2 border rounded-lg bg-white" onchange="loadTplCategories()"></select>
+            </div>
+            <div>
+              <label class="text-xs font-semibold mb-1 block">اختر الفئة (Category):</label>
+              <select id="tpl_category" class="w-full px-4 py-2 border rounded-lg bg-white"></select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-xs font-semibold mb-1 block">نص البند الجديد:</label>
+              <input type="text" id="tpl_new_item" required placeholder="مثال: التخلص من النفايات بشكل يومي" class="w-full px-4 py-2 border rounded-lg bg-white">
+            </div>
+            <button type="submit" class="md:col-span-2 bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition">إضافة البند للقالب</button>
+          </form>
+        </div>
+        <p class="text-sm text-gray-500">ملاحظة: التغييرات التي تجريها هنا ستُحفظ في السحابة وتظهر لجميع المفتشين.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- نوافذ منبثقة -->
+  <div id="qr-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4">
+    <div class="bg-white p-4 rounded-xl w-full max-w-md text-center">
+      <h3 class="font-bold text-lg mb-4">جاري مسح الباركود...</h3>
+      <div id="qr-reader" class="w-full"></div>
+      <button onclick="closeQRScanner()" class="mt-4 w-full bg-red-600 text-white py-2 rounded-lg font-bold">إلغاء</button>
+    </div>
+  </div>
+
+  <div id="history-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h3 class="font-bold text-lg text-red-700" id="history-title">سجل المؤسسة</h3>
+        <button onclick="document.getElementById('history-modal').classList.add('hidden')" class="text-gray-500 text-2xl">&times;</button>
+      </div>
+      <div class="p-4 overflow-y-auto">
+        <table class="w-full text-right text-sm">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-2">التاريخ</th>
+              <th class="p-2">المراقب</th>
+              <th class="p-2">النتيجة</th>
+              <th class="p-2">م / غير م</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 overflow-y-auto p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl mx-auto my-4">
+      <div class="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-2xl sticky top-0 z-10">
+        <h2 class="text-xl font-bold text-red-700">تفاصيل الكشف الرقابي</h2>
+        <button onclick="document.getElementById('view-modal').classList.add('hidden')" class="text-gray-500 hover:text-red-700 text-3xl leading-none">&times;</button>
+      </div>
+      <div id="view-modal-content" class="p-6 space-y-6"></div>
+      <div class="p-4 border-t bg-gray-50 text-left rounded-b-2xl">
+        <button onclick="document.getElementById('view-modal').classList.add('hidden')" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-bold hover:bg-gray-400">إغلاق</button>
+      </div>
+    </div>
+  </div><script>
+    // --- 1. المتغيرات الأساسية ---
+    let db, currentFacilityKey = null, currentChecklistState = {}, windowInspections = [], editingInspection = null, editingFacilityKey = null, editingChecklistState = {};
+    let currentImages = [], loggedInUser = null, currentGPS = { lat: null, lng: null };
+    let qrScanner = null;
+    const CACHE_KEY = 'lfsa_cache_v1';
+
+    // --- 2. القوالب التفصيلية الكاملة ---
+    let FACILITY_CHECKLISTS = {
+      restaurant: { label: 'مطعم', icon: '🍽️', description: 'مطعم / مأكولات جاهزة', categories: [ { name: 'الصحة الشخصية للعاملين', ref: 'Codex CAC/RCP 1-1969 §7', items: ['شهادات صحية سارية لجميع العاملين','نظافة الأيدي والأظافر والزي الرسمي','وجود مغاسل أيدي مزودة بصابون ومطهر','عدم وجود جروح مكشوفة أو أمراض معدية','تدريب موثق على النظافة الشخصية'] }, { name: 'النظافة والتعقيم', ref: 'Codex §6 / GFSI', items: ['نظافة أسطح التحضير والمعدات','برنامج تنظيف وتعقيم موثق (SSOP)','نظافة الأرضيات والجدران والأسقف','فصل مواد التنظيف عن مناطق الطعام'] }, { name: 'التحكم بالحرارة', ref: 'HACCP - CCP', items: ['حرارة التبريد 0-4°م موثقة يومياً','حرارة التجميد ≤ -18°م','حرارة الطهي ≥ 75°م للحم والدواجن','حرارة حفظ الطعام الساخن ≥ 63°م','سجلات حرارة دورية معتمدة'] }, { name: 'منع التلوث التبادلي', ref: 'HACCP', items: ['لوحات تقطيع منفصلة (نيء/مطبوخ)','فصل مناطق التحضير عن مناطق التقديم','عدم تلامس النيء مع الجاهز للأكل','أدوات مخصصة لكل نوع غذاء'] }, { name: 'المياه والمرافق', ref: 'WHO / Codex', items: ['مصدر مياه صالح للشرب','صرف صحي سليم وغير مسدود','إضاءة وتهوية كافية','وجود شفاطات لسحب الأبخرة'] }, { name: 'مكافحة الحشرات', ref: 'IPM', items: ['عقد ساري مع شركة مكافحة معتمدة','مصائد وأجهزة طاردة تعمل','غياب آثار حشرات أو قوارض','شبك معدني على النوافذ والفتحات'] }, { name: 'التتبع والتوثيق', ref: 'ISO 22000', items: ['خطة HACCP موثقة ومحدثة','سجلات تتبع مصدر المواد الأولية','إجراء استدعاء (Recall) موثق ومُختبر','سجلات تدريب العاملين'] } ] },
+      butcher: { label: 'ملحمة', icon: '🥩', description: 'بيع وتجهيز اللحوم', categories: [ { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية سارية','ارتداء الزي وأغطية الرأس','نظافة الأيدي والأظافر','مغسلة أيدي مع صابون ومطهر','عدم وجود جروح مكشوفة'] }, { name: 'التحكم بالحرارة', ref: 'HACCP - CCP', items: ['غرفة التبريد 0-4°م موثقة','المجمد ≤ -18°م','مقياس حرارة في كل وحدة تبريد','سجلات يومية للحرارة','فصل اللحوم النيئة عن المطبوخة'] }, { name: 'النظافة والتعقيم', ref: 'GFSI', items: ['نظافة أسطح التقطيع والموازين','تعقيم السكاكين بين الاستخدامات','نظافة الأرضيات والجدران','تخزين مواد التنظيف منفصلة','نظافة صناديق النفايات مع أغطية'] }, { name: 'منع التلوث التبادلي', ref: 'HACCP', items: ['لوحات تقطيع منفصلة (أحمر/دواجن)','فصل التجهيز عن البيع','عدم تلامس النيء مع الجاهز','أدوات مخصصة لكل نوع لحم'] }, { name: 'المياه والمرافق', ref: 'WHO / Codex', items: ['مياه صالحة للشرب','صرف سليم','إضاءة وتهوية كافية'] }, { name: 'مكافحة الحشرات', ref: 'Codex / IPM', items: ['عقد مكافحة ساري','مصائد وأجهزة تعمل','غياب آثار حشرات/قوارض','شبك معدني على الفتحات'] }, { name: 'التتبع والتوثيق', ref: 'ISO 22000', items: ['سجلات تتبع مصدر كل دفعة','خطة HACCP موثقة','سجلات تدريب','إجراء استدعاء موثق'] } ] },
+      supermarket: { label: 'سوبرماركت', icon: '🛒', description: 'متجر أغذية تجزئة', categories: [ { name: 'التخزين والعرض', ref: 'Codex §5', items: ['فصل الأغذية عن المواد غير الغذائية','رفوف نظيفة ومرتفعة عن الأرض','تدوير المخزون (FIFO/FEFO)','فحص تواريخ الصلاحية دورياً'] }, { name: 'التحكم بالحرارة', ref: 'HACCP', items: ['ثلاجات العرض 0-4°م','المجمدات ≤ -18°م','مقاييس حرارة تعمل','سجلات حرارة يومية'] }, { name: 'النظافة', ref: 'GFSI', items: ['نظافة الأرضيات والرفوف','برنامج تنظيف موثق','نظافة عربات التسوق وسلال اليد'] }, { name: 'منع التلوث التبادلي', ref: 'HACCP', items: ['فصل اللحوم النيئة عن الجاهزة','أقسام منفصلة (لحوم/ألبان/خضار)','أدوات تقطيع مخصصة لكل قسم'] }, { name: 'مكافحة الحشرات', ref: 'IPM', items: ['عقد مكافحة ساري','مصائد على الأبواب','غياب آثار حشرات/قوارض'] }, { name: 'التتبع والاستدعاء', ref: 'ISO 22000', items: ['سجلات تتبع الموردين','إجراء استدعاء (Recall) موثق','لوحة إعلان أرقام الاستدعاء'] } ] },
+      slaughterhouse: { label: 'مسلخ', icon: '🐄', description: 'ذبح وتجهيز', categories: [ { name: 'قبل الذبح', ref: 'Codex §4.4', items: ['فحص بيطري قبل الذبح','فصل الحيوانات المريضة','سجلات الفحص البيطري','مياه شرب للحيوانات'] }, { name: 'بعد الذبح', ref: 'Codex §4.4', items: ['فحص بيطري بعد الذبح','ختم اللحوم الصالحة','إتلاف اللحوم غير الصالحة فوراً'] }, { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية للعاملين','زي وأغطية رأس','مغاسل أيدي مع مطهر'] }, { name: 'التحكم بالحرارة', ref: 'HACCP', items: ['غرف تبريد 0-4°م','مجمدات ≤ -18°م','سجلات حرارة موثقة'] }, { name: 'النظافة والتعقيم', ref: 'GFSI', items: ['تعقيم الأدوات والسكاكين','نظافة صالات الذبح','برنامج SSOP موثق'] }, { name: 'النفايات والمخلفات', ref: 'Codex §6', items: ['إدارة مخلفات الذبح بشكل صحي','حاويات نفايات مغلقة','صرف صحي مطابق'] }, { name: 'التتبع والتوثيق', ref: 'ISO 22000', items: ['تتبع أصل كل ذبيحة','خطة HACCP موثقة','سجلات تدريب'] } ] },
+      bakery: { label: 'مخبز', icon: '🥖', description: 'مخبوزات وحلويات', categories: [ { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية سارية','نظافة اليدين والزي','مغاسل أيدي مع مطهر'] }, { name: 'النظافة والتعقيم', ref: 'GFSI', items: ['نظافة أسطح العجين والمعدات','تعقيم الأدوات بين الدفعات','نظافة الأفران وقاعات التحضير'] }, { name: 'المواد الأولية', ref: 'ISO 22000', items: ['سجلات تتبع الدقيق والمواد','فحص المواد عند الاستلام','تخزين المواد الجافة بشكل صحي'] }, { name: 'التحكم بالحرارة', ref: 'HACCP', items: ['حرارة التخزين مناسبة','حرارة الطهي موثقة','تبريد سريع للحلويات الحساسة'] }, { name: 'منع التلوث التبادلي', ref: 'HACCP', items: ['فصل مناطق العجين عن الحشوات','فصل الحلويات بالكريمة عن الجافة','أدوات مخصصة'] }, { name: 'مكافحة الحشرات', ref: 'IPM', items: ['عقد ساري','مصائد تعمل','غياب آثار حشرات/قوارض'] }, { name: 'التتبع والتوثيق', ref: 'ISO 22000', items: ['خطة HACCP موثقة','سجلات تدريب','إجراء استدعاء موثق'] } ] },
+      factory: { label: 'مصنع', icon: '🏭', description: 'تصنيع وتعبئة', categories: [ { name: 'تصميم المنشأة', ref: 'Codex §4', items: ['فصل المناطق النظيفة عن غير النظيفة','مسار خطي للإنتاج','مواد بناء قابلة للتنظيف','صرف صحي مطابق'] }, { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية','زي وأغطية رأس وأحذية','مغاسل أيدي مع مطهر','برنامج صحي للعاملين'] }, { name: 'التحكم بالحرارة', ref: 'HACCP', items: ['CCPs محددة ومُراقبة','سجلات حرارة موثقة','تحقق (Verification) دوري'] }, { name: 'النظافة والتعقيم', ref: 'GFSI', items: ['SSOP موثق','تعقيم خطوط الإنتاج','نظافة البيئة (Environmental Monitoring)'] }, { name: 'منع التلوث التبادلي', ref: 'HACCP', items: ['فصل الأغذية النيئة عن المطبوخة','فصل المواد المسببة للحساسية','أدوات مخصصة'] }, { name: 'التعبئة والتغليف', ref: 'Codex §5', items: ['مواد تغليف غذائية معتمدة','وسم صحيح (Batch/Lot/Date)','تخزين التغليف بشكل نظيف'] }, { name: 'التتبع والاستدعاء', ref: 'ISO 22000', items: ['تتبع كل دفعة من الخام للمنتج','إجراء استدعاء موثق ومُختبر دورياً','خطة HACCP موثقة ومحدثة'] } ] },
+      cafe: { label: 'كافيه', icon: '☕', description: 'مشروبات ووجبات خفيفة', categories: [ { name: 'الصحة الشخصية', ref: 'Codex §7', items: ['شهادات صحية','نظافة الأيدي والزي','مغاسل أيدي مع مطهر'] }, { name: 'النظافة', ref: 'GFSI', items: ['نظافة آلات القهوة والمعدات','نظافة الأكواب والأدوات','نظافة الأسطح والطاولات'] }, { name: 'التحكم بالحرارة', ref: 'HACCP', items: ['ثلاجات 0-4°م','حرارة الماء ≥ 90°م للتحضير','سجلات حرارة'] }, { name: 'المياه والثلج', ref: 'WHO', items: ['مياه صالحة للشرب','ثلج من مياه صالحة','تنظيف آلات الثلج دورياً'] }, { name: 'التخزين', ref: 'Codex §5', items: ['تخزين المواد الجافة بشكل صحي','تخزين الحلويات في مكان مخصص'] }, { name: 'مكافحة الحشرات', ref: 'IPM', items: ['عقد ساري','غياب آثار حشرات/قوارض'] } ] },
+      warehouse: { label: 'مستودع', icon: '📦', description: 'تخزين وتوزيع', categories: [ { name: 'تخزين الأغذية', ref: 'Codex §5', items: ['رفوف مرتفعة عن الأرض','فصل الأغذية عن غير الغذائية','تدوير FIFO/FEFO','فحص تواريخ الصلاحية'] }, { name: 'التحكم بالحرارة', ref: 'HACCP', items: ['غرف تبريد 0-4°م','غرف تجميد ≤ -18°م','سجلات حرارة دورية'] }, { name: 'النظافة', ref: 'GFSI', items: ['نظافة الأرضيات والرفوف','برنامج تنظيف موثق'] }, { name: 'مكافحة الحشرات', ref: 'IPM', items: ['عقد مكافحة ساري','مصائد على الأبواب','شبك على الفتحات'] }, { name: 'التتبع', ref: 'ISO 22000', items: ['سجلات تتبع الموردين والعملاء','إجراء استدعاء موثق'] } ] }
+    };
+
+    async function loadTemplates() {
+      try {
+        const res = await fetch('/api/templates');
+        const data = await res.json();
+        if (data) FACILITY_CHECKLISTS = data;
+      } catch (e) { console.error("فشل تحميل القوالب."); }
+    }
+
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }
+    
+    function updateOnlineStatus() {
+      const bar = document.getElementById('status-bar');
+      if (navigator.onLine) { bar.className = 'online'; bar.textContent = 'متصل بالإنترنت'; syncOutbox(); } 
+      else { bar.className = 'offline'; bar.textContent = 'غير متصل - سيتم الحفظ محلياً'; }
+    }
+    window.addEventListener('online', updateOnlineStatus); window.addEventListener('offline', updateOnlineStatus); updateOnlineStatus();
+
+    const request = indexedDB.open("LFSADatabase", 1);
+    request.onupgradeneeded = (e) => { db = e.target.result; if (!db.objectStoreNames.contains('outbox')) db.createObjectStore('outbox', { keyPath: 'localId', autoIncrement: true }); };
+    request.onsuccess = (e) => { db = e.target.result; checkPendingSync(); };
+
+    function saveToLocalDB(payload) {
+      const tx = db.transaction('outbox', 'readwrite');
+      tx.objectStore('outbox').add(payload);
+      tx.oncomplete = () => { checkPendingSync(); changeFacility(); alert('تم الحفظ محلياً.'); };
+    }
+    function checkPendingSync() {
+      if (!db) return;
+      const tx = db.transaction('outbox', 'readonly'); const countReq = tx.objectStore('outbox').count();
+      countReq.onsuccess = () => {
+        if (countReq.result > 0) { document.getElementById('pending-sync-alert').classList.remove('hidden'); document.getElementById('pending-count').textContent = countReq.result; } 
+        else { document.getElementById('pending-sync-alert').classList.add('hidden'); }
+      };
+    }
+    async function syncOutbox() {
+      if (!navigator.onLine || !db) return;
+      const tx = db.transaction('outbox', 'readonly'); const getAllReq = tx.objectStore('outbox').getAll();
+      getAllReq.onsuccess = async () => {
+        const items = getAllReq.result;
+        for (let item of items) {
+          try {
+            const res = await fetch('/api/inspections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) });
+            if (res.ok) { const delTx = db.transaction('outbox', 'readwrite'); delTx.objectStore('outbox').delete(item.localId); delTx.oncomplete = () => checkPendingSync(); }
+          } catch (err) { break; }
+        }
+        if (!document.getElementById('admin-section').classList.contains('hidden')) loadInspections();
+      };
+    }
+    setInterval(syncOutbox, 30000);
+
+    function initSignaturePad() {
+      const canvas = document.getElementById('sig-canvas'); const ctx = canvas.getContext('2d'); let drawing = false;
+      canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+      canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stopDrawing); canvas.addEventListener('mouseout', stopDrawing);
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); }, {passive: false});
+      canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); }, {passive: false});
+      canvas.addEventListener('touchend', stopDrawing);
+      function startDrawing(e) { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX || e.clientX - canvas.getBoundingClientRect().left, e.offsetY || e.clientY - canvas.getBoundingClientRect().top); }
+      function draw(e) { if (!drawing) return; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#000'; ctx.lineTo(e.offsetX || e.clientX - canvas.getBoundingClientRect().left, e.offsetY || e.clientY - canvas.getBoundingClientRect().top); ctx.stroke(); }
+      function stopDrawing() { drawing = false; }
+    }
+    function clearSignature() { const canvas = document.getElementById('sig-canvas'); canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); }
+
+    function getGPSLocation() {
+      const statusEl = document.getElementById('gps-status');
+      if (!navigator.geolocation) { statusEl.textContent = 'المتصفح لا يدعم الموقع'; return; }
+      statusEl.textContent = 'جاري تحديد الموقع...';
+      navigator.geolocation.getCurrentPosition((pos) => {
+          currentGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          statusEl.textContent = `تم التحديد (Lat: ${currentGPS.lat.toFixed(6)}, Lng: ${currentGPS.lng.toFixed(6)})`;
+          statusEl.className = 'text-green-600 font-bold';
+        }, (err) => { statusEl.textContent = 'تعذر تحديد الموقع.'; statusEl.className = 'text-red-600 font-bold'; }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    function openQRScanner() {
+      document.getElementById('qr-modal').classList.remove('hidden');
+      qrScanner = new Html5Qrcode("qr-reader");
+      qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
+          try { const data = JSON.parse(decodedText); if(data.shop_name) document.getElementById('shop_name').value = data.shop_name; if(data.shop_address) document.getElementById('shop_address').value = data.shop_address; } 
+          catch(e) { document.getElementById('shop_name').value = decodedText; }
+          closeQRScanner();
+        }).catch(err => { alert('تعذر فتح الكاميرا: ' + err); closeQRScanner(); });
+    }
+    function closeQRScanner() { if (qrScanner) { qrScanner.stop().then(() => { qrScanner.clear(); qrScanner = null; }); } document.getElementById('qr-modal').classList.add('hidden'); }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn'); btn.disabled = true; btn.textContent = 'جاري التحقق...';
+      await loadTemplates();
+      try {
+        const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value }) });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          loggedInUser = { username: data.username, full_name: data.full_name, ministry: data.ministry };
+          document.getElementById('login-section').classList.add('hidden');
+          if (data.role === 'admin') { document.getElementById('admin-section').classList.remove('hidden'); loadInspections(); switchAdminTab('inspections'); } 
+          else { document.getElementById('facility-selection-section').classList.remove('hidden'); renderFacilityCards(); getGPSLocation(); }
+        } else alert(data.error || 'خطأ في البيانات');
+      } catch { alert('خطأ في الاتصال'); }
+      finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
+    }
+    function logout() { location.reload(); }
+
+    function renderFacilityCards() {
+      const c = document.getElementById('facility-cards'); c.innerHTML = '';
+      Object.keys(FACILITY_CHECKLISTS).forEach(k => {
+        const f = FACILITY_CHECKLISTS[k];
+        c.innerHTML += `<button type="button" onclick="selectFacility('${k}')" class="bg-red-50 border-2 border-red-200 p-6 rounded-xl hover:border-red-600 transition text-center">
+          <div class="text-5xl mb-3">${f.icon}</div><div class="font-bold text-lg text-red-700">${f.label}</div>
+        </button>`;
+      });
+    }
+
+    function selectFacility(k) {
+      currentFacilityKey = k; const f = FACILITY_CHECKLISTS[k];
+      currentChecklistState = {}; currentImages = []; renderImagesPreview();
+      document.getElementById('general_notes').value = ''; clearSignature();
+      
+      f.categories.forEach((cat, ci) => cat.items.forEach((_, ii) => currentChecklistState[`c${ci}_i${ii}`] = {status: null, note: '', action: '', deadline: ''}));
+      document.getElementById('facility-selection-section').classList.add('hidden');
+      document.getElementById('inspector-section').classList.remove('hidden');
+      document.getElementById('facility_type').value = f.label; document.getElementById('facility_key').value = k;
+      document.getElementById('facility_type_display').textContent = f.icon + ' ' + f.label;
+      document.getElementById('inspect_date').value = new Date().toISOString().split('T')[0];
+      
+      const tempId = 'TEMP-' + Math.floor(Math.random() * 90000 + 10000);
+      document.getElementById('inspection_number_display').value = `REC-2026-${tempId} (مؤقت)`;
+      
+      if (loggedInUser) {
+        document.getElementById('inspector_name').value = loggedInUser.full_name;
+        document.getElementById('ministry').innerHTML = `<option value="${loggedInUser.ministry}">${loggedInUser.ministry}</option>`;
+      }
+      renderChecklist(document.getElementById('checklist-container'), f, currentChecklistState, 'count_m', 'count_g');
+      initSignaturePad();
+    }
+
+    function changeFacility() {
+      if (!confirm('فقدان البيانات. متابعة؟')) return;
+      document.getElementById('inspector-section').classList.add('hidden');
+      document.getElementById('facility-selection-section').classList.remove('hidden');
+    }
+
+    function toggleFollowUp() {
+      const res = document.getElementById('result').value;
+      const container = document.getElementById('follow-up-container');
+      if (res !== 'مستوفي الشروط الصحية') { container.classList.remove('hidden'); document.getElementById('follow_up_date').required = true; } 
+      else { container.classList.add('hidden'); document.getElementById('follow_up_date').required = false; document.getElementById('follow_up_date').value = ''; }
+    }
+
+    function buildHTML(f, state) {
+      let h = '';
+      f.categories.forEach((cat, ci) => {
+        h += `<div class="bg-white border p-4 rounded-xl"><h4 class="font-bold text-red-700 border-b pb-2 mb-2">${ci+1}. ${cat.name}</h4><div class="space-y-1">`;
+        cat.items.forEach((item, ii) => {
+          const key = `c${ci}_i${ii}`; const s = state[key] || {status: null, note: '', action: '', deadline: ''};
+          const p = s.status === 'pass' ? 'bg-green-600 text-white' : 'bg-white text-green-700';
+          const g = s.status === 'fail' ? 'bg-red-600 text-white' : 'bg-white text-red-700';
+          const n = s.status === 'na' ? 'bg-gray-500 text-white' : 'bg-white text-gray-700';
+          h += `<div class="flex flex-col md:flex-row gap-2 p-2 border-b border-gray-100">
+            <div class="flex-1 text-sm">${item}</div>
+            <div class="flex gap-1 shrink-0">
+              <button type="button" data-key="${key}" data-status="pass" class="status-btn px-2 py-1 text-xs rounded border ${p}">مطابق</button>
+              <button type="button" data-key="${key}" data-status="fail" class="status-btn px-2 py-1 text-xs rounded border ${g}">غير مطابق</button>
+              <button type="button" data-key="${key}" data-status="na" class="status-btn px-2 py-1 text-xs rounded border ${n}">لا ينطبق</button>
+            </div>
+            ${s.status === 'fail' ? `
+              <div class="flex flex-col gap-1 w-full md:w-64">
+                <input type="text" data-key="${key}" value="${s.note}" placeholder="ملاحظة السبب..." class="note-input w-full px-2 py-1 text-xs border rounded">
+                <input type="text" data-key="${key}" value="${s.action}" placeholder="الإجراء التصحيحي..." class="action-input w-full px-2 py-1 text-xs border border-orange-300 rounded bg-orange-50">
+                <input type="date" data-key="${key}" value="${s.deadline}" class="deadline-input w-full px-2 py-1 text-xs border border-orange-300 rounded bg-orange-50" title="مهلة الإنجاز">
+              </div>
+            ` : ''}
+          </div>`;
+        });
+        h += `</div></div>`;
+      });
+      return h;
+    }
+
+    function renderChecklist(container, f, state, idM, idG) {
+      container.innerHTML = buildHTML(f, state);
+      container.querySelectorAll('.status-btn').forEach(btn => {
+        btn.onclick = () => { const k = btn.dataset.key, st = btn.dataset.status; state[k].status = state[k].status === st ? null : st; renderChecklist(container, f, state, idM, idG); updateCounts(state, idM, idG); };
+      });
+      container.querySelectorAll('.note-input').forEach(inp => { inp.oninput = e => { state[e.target.dataset.key].note = e.target.value; }; });
+      container.querySelectorAll('.action-input').forEach(inp => { inp.oninput = e => { state[e.target.dataset.key].action = e.target.value; }; });
+      container.querySelectorAll('.deadline-input').forEach(inp => { inp.oninput = e => { state[e.target.dataset.key].deadline = e.target.value; }; });
+      updateCounts(state, idM, idG);
+    }
+
+    function updateCounts(state, idM, idG) {
+      let m = 0, g = 0;
+      Object.values(state).forEach(s => { if (s.status === 'pass') m++; else if (s.status === 'fail') g++; });
+      const em = document.getElementById(idM), eg = document.getElementById(idG);
+      if (em) em.value = m; if (eg) eg.value = g;
+    }
+
+    async function openShopHistory() {
+      const name = document.getElementById('shop_name').value.trim();
+      if (!name) return alert('الرجاء إدخال اسم المؤسسة أولاً لعرض السجل.');
+      document.getElementById('history-title').textContent = `سجل المؤسسة: ${name}`;
+      document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" class="text-center p-2">جاري التحميل...</td></tr>';
+      document.getElementById('history-modal').classList.remove('hidden');
+      try {
+        const res = await fetch('/api/inspections');
+        const inspections = await res.json();
+        const filtered = inspections.filter(i => i.shop_name.includes(name));
+        const tbody = document.getElementById('history-table-body');
+        tbody.innerHTML = '';
+        if (filtered.length === 0) return tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-green-600 font-bold">هذه أول زيارة لهذه المؤسسة.</td></tr>';
+        filtered.forEach(i => {
+          const color = i.result.includes('مستوفي') ? 'text-green-600' : 'text-red-600';
+          tbody.innerHTML += `<tr class="border-b"><td class="p-2">${i.inspect_date}</td><td class="p-2">${i.inspector}</td><td class="p-2 font-bold ${color}">${i.result}</td><td class="p-2">${i.count_m} / ${i.count_g}</td></tr>`;
+        });
+      } catch { document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" class="text-center p-2 text-red-500">حدث خطأ.</td></tr>'; }
+    }
+
+    function handleImageUpload(event) {
+      const files = event.target.files;
+      if (!files.length) return;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]; const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas'); const MAX_WIDTH = 800;
+            let scale = MAX_WIDTH / img.width; if (scale > 1) scale = 1;
+            canvas.width = img.width * scale; canvas.height = img.height * scale;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            currentImages.push(canvas.toDataURL('image/jpeg', 0.7));
+            renderImagesPreview();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      event.target.value = '';
+    }
+    function renderImagesPreview() {
+      const container = document.getElementById('image-preview-container'); container.innerHTML = '';
+      currentImages.forEach((imgSrc, index) => {
+        container.innerHTML += `<div class="relative inline-block"><img src="${imgSrc}" class="h-20 w-20 object-cover rounded-lg border"><button type="button" onclick="removeImage(${index})" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">&times;</button></div>`;
+      });
+    }
+    function removeImage(index) { currentImages.splice(index, 1); renderImagesPreview(); }
+
+    document.getElementById('general-mic-btn').onclick = function() {
+      const btn = this; const inputField = document.getElementById('general_notes');
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert("متصفحك لا يدعم التسجيل.");
+      const recognition = new SpeechRecognition(); recognition.lang = 'ar-LB';
+      btn.textContent = '🔴'; btn.classList.add('animate-pulse'); recognition.start();
+      recognition.onresult = (event) => { const text = event.results[0][0].transcript; inputField.value += (inputField.value ? ' - ' : '') + text; };
+      recognition.onend = () => { btn.textContent = '🎤'; btn.classList.remove('animate-pulse'); };
+    };
+
+    async function submitInspection(e) {
+      e.preventDefault(); const btn = document.getElementById('submit-btn'); btn.disabled = true; btn.textContent = 'جاري المعالجة...';
+      const checklist = [];
+      FACILITY_CHECKLISTS[currentFacilityKey].categories.forEach((cat, ci) => cat.items.forEach((item, ii) => {
+        const s = currentChecklistState[`c${ci}_i${ii}`]; 
+        checklist.push({ category: cat.name, reference: cat.ref, item: item, status: s.status || 'pending', note: s.note || '', action: s.action || '', deadline: s.deadline || '' });
+      }));
+      
+      const canvas = document.getElementById('sig-canvas');
+      const payload = {
+        facility_key: currentFacilityKey, facility_type: document.getElementById('facility_type').value,
+        shop_name: document.getElementById('shop_name').value, inspector: document.getElementById('inspector_name').value,
+        inspect_date: document.getElementById('inspect_date').value, temp_info: document.getElementById('temp_info').value,
+        ministry: document.getElementById('ministry').value, governorate: document.getElementById('governorate').value,
+        shop_address: document.getElementById('shop_address').value, follow_up_date: document.getElementById('follow_up_date').value,
+        gps: currentGPS, signature: canvas.toDataURL('image/png'),
+        general_notes: document.getElementById('general_notes').value, general_images: currentImages,
+        count_m: document.getElementById('count_m').value, count_g: document.getElementById('count_g').value,
+        result: document.getElementById('result').value, risk: document.getElementById('risk').value, checklist
+      };
+      
+      if (!navigator.onLine) { saveToLocalDB(payload); btn.disabled = false; btn.textContent = 'حفظ الكشف'; return; }
+      try {
+        const res = await fetch('/api/inspections', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setCache({ ...payload, server_id: data.id });
+          const action = confirm(`✅ ${data.message}\n\nهل ترغب في طباعة/حفظ نسخة PDF للمؤسسة الآن؟`);
+          if (action) { payload.id = data.id; downloadPDF(payload); } else { shareViaWhatsApp(payload); }
+          document.getElementById('inspection-form').reset(); changeFacility();
+        } else alert(data.error);
+      } catch { saveToLocalDB(payload); }
+      finally { btn.disabled = false; btn.textContent = 'حفظ الكشف وإرساله'; }
+    }
+
+    function exportToExcel() {
+      if (windowInspections.length === 0) return alert('لا توجد بيانات');
+      let csv = '\uFEFF' + 'رقم الكشف,المحل,المراقب,الجهة,المحافظة,النوع,التاريخ,النتيجة,الخطورة,المطابقة,عدم المطابقة\n';
+      windowInspections.forEach(i => { csv += `REC-2026-${i.id},${i.shop_name},${i.inspector},${i.ministry},${i.governorate},${i.facility_type},${i.inspect_date},${i.result},${i.risk},${i.count_m},${i.count_g}\n`; });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+      link.download = `LFSa_${new Date().toISOString().split('T')[0]}.csv`; link.click();
+    }
+
+    async function loadInspections() {
+      const res = await fetch('/api/inspections'); windowInspections = await res.json();
+      const tbody = document.getElementById('inspections-table-body'); tbody.innerHTML = '';
+      windowInspections.forEach((item, idx) => {
+        tbody.innerHTML += `<tr>
+          <td class="p-3">REC-2026-${item.id}</td><td class="p-3 text-xs">${item.ministry || '-'}</td><td class="p-3 text-xs">${item.governorate || '-'}</td>
+          <td class="p-3 font-semibold text-blue-700">${item.facility_type || '-'}</td><td class="p-3 font-bold cursor-pointer hover:underline text-blue-600" onclick="viewHistoryFromAdmin('${item.shop_name}')">${item.shop_name}</td>
+          <td class="p-3">${item.inspector}</td><td class="p-3">${item.inspect_date}</td><td class="p-3"><span class="text-green-600">${item.count_m}</span> / <span class="text-red-600">${item.count_g}</span></td>
+          <td class="p-3">${item.result}</td>
+          <td class="p-3 flex flex-col gap-1">
+            <button onclick="viewInspection(windowInspections[${idx}])" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700 transition">👁️ عرض التفاصيل</button>
+            <button onclick="downloadPDF(windowInspections[${idx}])" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">🖨️ طباعة</button>
+          </td>
+        </tr>`;
+      });
+      renderCharts(windowInspections);
+    }
+
+    function viewHistoryFromAdmin(name) { document.getElementById('shop_name').value = name; openShopHistory(); }
+
+    function renderCharts(data) {
+      if (!document.getElementById('passFailChart')) return;
+      let pass = 0, fail = 0; let types = {};
+      data.forEach(d => { if (d.result.includes('مستوفي')) pass++; else fail++; types[d.facility_type] = (types[d.facility_type] || 0) + 1; });
+      new Chart(document.getElementById('passFailChart'), { type: 'pie', data: { labels: ['مستوفي', 'غير مستوفي'], datasets: [{ data: [pass, fail], backgroundColor: ['#16a34a', '#dc2626'] }] } });
+      new Chart(document.getElementById('facilityTypeChart'), { type: 'bar', data: { labels: Object.keys(types), datasets: [{ label: 'عدد', data: Object.values(types), backgroundColor: '#3b82f6' }] } });
+    }
+
+    function switchAdminTab(tab) {
+      const views = ['inspections', 'analytics', 'users', 'templates'];
+      views.forEach(v => { document.getElementById(`admin-${v}-view`).classList.add('hidden'); document.getElementById(`tab-btn-${v}`).className = 'text-sm bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold'; });
+      document.getElementById(`admin-${tab}-view`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = 'text-sm bg-red-700 text-white px-4 py-2 rounded-lg font-bold';
+      if (tab === 'users') loadUsers();
+      if (tab === 'templates') loadTemplatesAdmin();
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/users'); const users = await res.json(); const tbody = document.getElementById('users-table-body'); tbody.innerHTML = '';
+        if (users.length === 0) return tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center">لا يوجد مراقبون</td></tr>';
+        users.forEach(u => { tbody.innerHTML += `<tr><td class="p-3 font-bold">${u.full_name || u.username}</td><td class="p-3 text-sm">${u.ministry || '-'}</td><td class="p-3">${u.username}</td><td class="p-3"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">مراقب</span></td><td class="p-3"><button onclick="deleteUser('${u.username}')" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs">حذف</button></td></tr>`; });
+      } catch (err) { console.error(err); }
+    }
+
+    async function addNewUser(e) {
+      e.preventDefault();
+      const payload = { full_name: document.getElementById('new_full_name').value, ministry: document.getElementById('new_ministry').value, username: document.getElementById('new_username').value, password: document.getElementById('new_password').value };
+      try {
+        const res = await fetch('/api/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        if (res.ok) { alert('✅ تمت الإضافة'); document.getElementById('add-user-form').reset(); loadUsers(); } else alert('⚠️ خطأ');
+      } catch { alert('⚠️ خطأ'); }
+    }
+
+    async function deleteUser(username) {
+      if (!confirm(`حذف "${username}"؟`)) return;
+      try { await fetch(`/api/users/${username}`, { method: 'DELETE' }); loadUsers(); } catch { alert('⚠️'); }
+    }
+
+    function loadTemplatesAdmin() {
+      const fSelect = document.getElementById('tpl_facility');
+      fSelect.innerHTML = '<option value="">-- اختر النوع --</option>';
+      Object.keys(FACILITY_CHECKLISTS).forEach(k => { fSelect.innerHTML += `<option value="${k}">${FACILITY_CHECKLISTS[k].label}</option>`; });
+      fSelect.onchange = loadTplCategories;
+    }
+
+    function loadTplCategories() {
+      const fk = document.getElementById('tpl_facility').value; const catSelect = document.getElementById('tpl_category');
+      catSelect.innerHTML = '<option value="">-- اختر الفئة --</option>';
+      if (!fk || !FACILITY_CHECKLISTS[fk]) return;
+      FACILITY_CHECKLISTS[fk].categories.forEach((cat, idx) => { catSelect.innerHTML += `<option value="${idx}">${cat.name}</option>`; });
+    }
+
+    async function addTemplateItem(e) {
+      e.preventDefault();
+      const fk = document.getElementById('tpl_facility').value; const catIdx = document.getElementById('tpl_category').value; const newItem = document.getElementById('tpl_new_item').value.trim();
+      if (!fk || catIdx === '' || !newItem) return alert('الرجاء تعبئة الحقول');
+      FACILITY_CHECKLISTS[fk].categories[catIdx].items.push(newItem);
+      try {
+        const res = await fetch('/api/templates', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(FACILITY_CHECKLISTS) });
+        if (res.ok) { alert('✅ تم الإضافة'); document.getElementById('add-template-item-form').reset(); } else alert('⚠️ فشل');
+      } catch { alert('⚠️ خطأ'); }
+    }
+
+    function shareViaWhatsApp(item) {
+      const text = `مرحباً، نرفق لكم نتيجة الكشف الرقابي:\nالاسم: ${item.shop_name}\nالتاريخ: ${item.inspect_date}\nالنتيجة: ${item.result}\nشكراً - الهيئة اللبنانية لسلامة الغذاء.`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // --- دالة عرض تفاصيل الكشف (جديد) ---
+    async function viewInspection(item) {
+      if (!item.checklist && item.id) { 
+        try { 
+          const r = await fetch(`/api/inspections/${item.id}`); 
+          const f = await r.json(); 
+          Object.assign(item, f); 
+        } catch (e) {} 
+      }
+
+      const list = item.checklist || []; 
+      const total = list.length;
+      const p = list.filter(x=>x.status==='pass').length;
+      const f = list.filter(x=>x.status==='fail').length;
+      const n = list.filter(x=>x.status==='na').length;
+      const comp = (p+f)>0 ? Math.round((p/(p+f))*100) : 0;
+
+      let checklistHtml = '';
+      const groups = {}; 
+      list.forEach(x => { 
+        if(!groups[x.category]) groups[x.category] = {ref: x.reference, items: []}; 
+        groups[x.category].items.push(x); 
+      });
+
+      Object.entries(groups).forEach(([cat, g]) => {
+        checklistHtml += `
+          <div class="bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden shadow-sm">
+            <div class="bg-red-50 text-red-800 font-bold px-4 py-2 border-b border-gray-200 flex justify-between">
+              <span>${cat}</span>
+              <span class="text-xs text-gray-500 font-normal mt-1">${g.ref}</span>
+            </div>
+            <div class="divide-y divide-gray-100">
+        `;
+        g.items.forEach(x => {
+          let statusBadge = '';
+          if (x.status === 'pass') statusBadge = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">مطابق</span>';
+          else if (x.status === 'fail') statusBadge = '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">غير مطابق</span>';
+          else if (x.status === 'na') statusBadge = '<span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-bold">لا ينطبق</span>';
+          else statusBadge = '<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">غير محدد</span>';
+
+          checklistHtml += `
+            <div class="p-3 flex flex-col md:flex-row md:items-start gap-2">
+              <div class="flex-1 text-sm text-gray-700">${x.item}</div>
+              <div class="shrink-0">${statusBadge}</div>
+              ${x.status === 'fail' ? `
+                <div class="w-full md:w-1/3 text-xs bg-red-50 p-2 rounded border border-red-100 mt-2 md:mt-0">
+                  <div class="text-red-700"><b>ملاحظة:</b> ${x.note || '-'}</div>
+                  <div class="text-orange-700 mt-1"><b>إجراء تصحيحي:</b> ${x.action || '-'}</div>
+                  <div class="text-gray-600 mt-1"><b>المهلة:</b> ${x.deadline || '-'}</div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+        checklistHtml += `</div></div>`;
+      });
+
+      let imagesHtml = '';
+      if (item.general_images && item.general_images.length > 0) {
+        imagesHtml = `<div class="flex flex-wrap gap-2 mt-2">`;
+        item.general_images.forEach(img => { 
+          imagesHtml += `<a href="${img}" target="_blank"><img src="${img}" class="h-24 w-24 object-cover rounded-lg border border-gray-300 hover:opacity-80 transition shadow-sm"></a>`; 
+        });
+        imagesHtml += `</div>`;
+      }
+
+      let gpsHtml = 'غير متاح';
+      if (item.gps && item.gps.lat && item.gps.lng) {
+        gpsHtml = `
+          <a href="https://maps.google.com/?q=${item.gps.lat},${item.gps.lng}" target="_blank" class="text-blue-600 hover:underline font-mono text-sm bg-blue-50 px-2 py-1 rounded border border-blue-200 inline-block mt-1">
+            ${item.gps.lat.toFixed(6)}, ${item.gps.lng.toFixed(6)}
+          </a>`;
+      }
+
+      const modalContent = document.getElementById('view-modal-content');
+      modalContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 col-span-1 md:col-span-2">
+            <h3 class="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center gap-2"><span class="text-red-600">🏢</span> بيانات المؤسسة</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div><b>اسم المؤسسة:</b> ${item.shop_name}</div>
+              <div><b>النوع:</b> ${item.facility_type}</div>
+              <div><b>الجهة:</b> ${item.ministry || '-'}</div>
+              <div><b>المحافظة:</b> ${item.governorate || '-'}</div>
+              <div class="col-span-2"><b>العنوان:</b> ${item.shop_address || '-'}</div>
+              <div><b>المراقب:</b> ${item.inspector}</div>
+              <div><b>التاريخ:</b> ${item.inspect_date}</div>
+              <div class="col-span-2"><b>الإحداثيات (GPS):</b> ${gpsHtml}</div>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl border-2 border-red-600 shadow-sm flex flex-col justify-center items-center text-center">
+            <div class="text-sm text-gray-500 mb-1">النتيجة النهائية</div>
+            <div class="text-xl font-bold ${item.result.includes('غير') || item.result.includes('إنذار') || item.result.includes('إغلاق') ? 'text-red-600' : 'text-green-600'}">${item.result}</div>
+            <div class="mt-3 text-sm text-gray-500">مستوى الخطورة</div>
+            <div class="font-bold text-orange-600">${item.risk}</div>
+            <div class="mt-3 pt-3 border-t w-full flex justify-between font-bold px-2">
+              <span class="text-green-600">مطابق: ${item.count_m}</span>
+              <span class="text-red-600">غير مطابق: ${item.count_g}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 flex justify-between items-center">
+          <div>
+            <span class="text-indigo-800 font-bold">نسبة المطابقة الإجمالية للكشف: </span>
+            <span class="text-2xl font-black ${comp >= 90 ? 'text-green-600' : 'text-red-600'}">${comp}%</span>
+          </div>
+          ${item.follow_up_date ? `<div class="bg-orange-100 text-orange-800 px-3 py-1 rounded text-sm font-bold border border-orange-300">⚠️ متابعة مطلوبة: ${item.follow_up_date}</div>` : ''}
+        </div>
+
+        <h3 class="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2"><span class="text-red-600">📋</span> قائمة التحقق التفصيلية</h3>
+        ${checklistHtml || '<p class="text-gray-500 bg-gray-50 p-4 rounded text-center">لا توجد بنود محفوظة.</p>'}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <h3 class="font-bold text-gray-800 mb-2 flex items-center gap-2"><span class="text-red-600">📝</span> ملاحظات عامة</h3>
+            <p class="text-sm text-gray-700 whitespace-pre-wrap">${item.general_notes || 'لا يوجد ملاحظات.'}</p>
+            ${imagesHtml ? `<h4 class="font-bold text-sm text-gray-800 mt-4 mb-2 border-t pt-2">📸 الصور المرفقة (اضغط للتكبير):</h4>${imagesHtml}` : ''}
+          </div>
+          
+          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col items-center justify-center">
+            <h3 class="font-bold text-gray-800 mb-2">توقيع المراقب</h3>
+            ${item.signature ? `<img src="${item.signature}" class="h-24 object-contain">` : '<p class="text-gray-400">لا يوجد توقيع</p>'}
+            <div class="border-t border-gray-400 w-48 mt-2 pt-1 text-center font-bold">${item.inspector}</div>
+          </div>
+        </div>
+      `;
+      document.getElementById('view-modal').classList.remove('hidden');
+    }
+
+    // --- PDF Generation ---
+    async function downloadPDF(item) {
+      if (!item.checklist && item.id) { try { const r = await fetch(`/api/inspections/${item.id}`); const f = await r.json(); Object.assign(item, f); } catch (e) {} }
+      const list = item.checklist || []; const total = list.length, p = list.filter(x=>x.status==='pass').length, f = list.filter(x=>x.status==='fail').length, n = list.filter(x=>x.status==='na').length;
+      const comp = (p+f)>0 ? Math.round((p/(p+f))*100) : 0;
+      
+      let cHtml = '';
+      const groups = {}; list.forEach(x => { if(!groups[x.category]) groups[x.category] = {ref: x.reference, items: []}; groups[x.category].items.push(x); });
+      Object.entries(groups).forEach(([cat, g]) => {
+        cHtml += `<div style="margin-top:15px; page-break-inside:avoid;"><div style="background:#b91c1c; color:#fff; padding:6px; font-weight:bold; font-size:14px; border-radius:4px;">${cat}</div><table style="width:100%; border-collapse:collapse; margin-top:5px; font-size:12px;"><thead><tr style="background:#f3f4f6;"><th style="border:1px solid #ddd; padding:4px;">البند</th><th style="border:1px solid #ddd; padding:4px; width:80px;">النتيجة</th><th style="border:1px solid #ddd; padding:4px;">ملاحظة / إجراء تصحيحي</th><th style="border:1px solid #ddd; padding:4px; width:80px;">المهلة</th></tr></thead><tbody>`;
+        g.items.forEach(x => {
+          const col = x.status==='pass'?'#16a34a':x.status==='fail'?'#dc2626':'#6b7280';
+          const lbl = x.status==='pass'?'مطابق':x.status==='fail'?'غير مطابق':'لا ينطبق';
+          let noteHtml = x.note || '';
+          if (x.status === 'fail' && x.action) noteHtml += `<br><span style="color:#b45309; font-weight:bold;">الإجراء: ${x.action}</span>`;
+          cHtml += `<tr><td style="border:1px solid #ddd; padding:4px;">${x.item}</td><td style="border:1px solid #ddd; padding:4px; text-align:center; color:${col}; font-weight:bold;">${lbl}</td><td style="border:1px solid #ddd; padding:4px;">${noteHtml}</td><td style="border:1px solid #ddd; padding:4px; text-align:center;">${x.deadline||'-'}</td></tr>`;
+        });
+        cHtml += `</tbody></table></div>`;
+      });
+
+      let imagesHtml = '';
+      if (item.general_images && item.general_images.length > 0) {
+        imagesHtml = `<div style="margin-top: 15px; page-break-inside: avoid;"><h4 style="color:#b45309; font-size:14px; margin-bottom:8px;">📸 صور مرفقة:</h4><div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+        item.general_images.forEach(img => { imagesHtml += `<img src="${img}" style="width:200px; max-height:200px; object-fit:cover; border:1px solid #ddd; border-radius:6px; margin:2px;">`; });
+        imagesHtml += `</div></div>`;
+      }
+
+      let gpsHtml = 'غير متاح';
+      if (item.gps && item.gps.lat && item.gps.lng) {
+        gpsHtml = `
+          <span style="font-family: monospace; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+            Lat: ${item.gps.lat.toFixed(6)}<br>
+            Lng: ${item.gps.lng.toFixed(6)}
+          </span><br>
+          <a href="https://maps.google.com/?q=${item.gps.lat},${item.gps.lng}" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:11px;">(عرض الخريطة)</a>
+        `;
+      }
+
+      const logoUrl = window.location.protocol === 'file:' ? 'logo.png' : `${window.location.origin}/logo.png`;
+      const finalId = item.id ? `REC-2026-${item.id}` : (item.server_id ? `REC-2026-${item.server_id}` : 'قيد المعالجة');
+
+      const w = window.open('', '_blank');
+      w.document.write(`
+        <html dir="rtl"><head><meta charset="utf-8"><title>تقرير - ${item.shop_name}</title>
+        <style>
+          body{font-family:'Cairo',sans-serif; padding:20px;} 
+          .head{text-align:center; border-bottom:3px solid #b91c1c; padding-bottom:10px; margin-bottom:20px;} 
+          .head img{height:80px; object-fit:contain;} 
+          .box{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;} 
+          .box div{background:#f9fafb; padding:8px; border:1px solid #ddd; border-radius:5px; font-size:13px;} 
+          .sum{border:2px solid #b91c1c; padding:15px; border-radius:8px; margin-bottom:20px;} 
+          .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; text-align:center; margin-bottom:15px;} 
+          .grid4 div{padding:8px; border-radius:5px; background:#f3f4f6;} 
+          .id-banner { background: #b91c1c; color: white; text-align: center; font-size: 20px; font-weight: bold; padding: 10px; border-radius: 8px; margin-bottom: 20px; letter-spacing: 2px; }
+          @media print{button{display:none;}}
+        </style>
+        </head><body>
+        
+        <div class="head">
+          <img src="${logoUrl}" alt="شعار الهيئة">
+          <h2 style="color:#b91c1c;margin:10px 0 5px;">الهيئة اللبنانية لسلامة الغذاء</h2>
+          <p>تقرير كشف رقابي رسمي</p>
+        </div>
+        
+        <div class="id-banner">
+          رقم الكشف: ${finalId}
+        </div>
+
+        <div class="box">
+          <div><b>الجهة:</b> ${item.ministry || '-'}</div>
+          <div><b>المحافظة:</b> ${item.governorate || '-'}</div>
+          <div><b>النوع:</b> ${item.facility_type}</div>
+          <div><b>المحل:</b> ${item.shop_name}</div>
+          <div><b>المراقب:</b> ${item.inspector}</div>
+          <div><b>التاريخ:</b> ${item.inspect_date}</div>
+          <div style="grid-column: span 2;"><b>إحداثيات الموقع (GPS):</b><br>${gpsHtml}</div>
+          <div style="grid-column: span 2;"><b>العنوان:</b> ${item.shop_address || '-'}</div>
+        </div>
+        
+        <div class="sum">
+          <h3 style="color:#b91c1c;margin:0 0 10px;border-bottom:2px solid #b91c1c;padding-bottom:5px;">📋 ملخص التقييم</h3>
+          <div class="grid4">
+            <div>الإجمالي: ${total}</div><div>مطابق: <span style="color:#16a34a;font-weight:bold;">${p}</span></div>
+            <div>غير مطابق: <span style="color:#dc2626;font-weight:bold;">${f}</span></div><div>لا ينطبق: ${n}</div>
+          </div>
+          <div style="text-align:center; font-weight:bold; margin-bottom:10px;">نسبة المطابقة: <span style="color:${comp>=90?'#16a34a':'#dc2626'};">${comp}%</span></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div style="border:1px solid #b91c1c; padding:8px; text-align:center;"><b>النتيجة:</b> ${item.result||'-'}</div>
+            <div style="border:1px solid #b91c1c; padding:8px; text-align:center;"><b>الخطورة:</b> ${item.risk||'-'}</div>
+          </div>
+        </div>
+        
+        <h3 style="color:#b91c1c;">قائمة التحقق التفصيلية</h3>
+        ${cHtml}
+        
+        ${imagesHtml}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;text-align:center;">
+          <div><b>توقيع المراقب</b><br><img src="${item.signature || ''}" style="height:60px; margin-top:5px;"><div style="border-top:1px solid #333; padding-top:5px;">${item.inspector}</div></div>
+          <div><b>توقيع صاحب المؤسسة</b><br><br><br><div style="border-top:1px solid #333; padding-top:5px;">-</div></div>
+        </div>
+
+        <div style="text-align:center;margin-top:20px;">
+          <button onclick="window.print()" style="padding:10px 30px; background:#b91c1c; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;">🖨️ طباعة / حفظ PDF</button>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(() => {
+              window.print();
+            }, 1500); 
+          };
+        <\/script>
+        </body></html>`);
+      w.document.close();
+    }
+  </script>
+</body>
+</html>
 
